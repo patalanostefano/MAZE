@@ -1,24 +1,22 @@
 package com.example.maze.ui.screens.avatar
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.maze.data.model.Avatar
-import com.example.maze.ui.screens.menu.MenuViewModel
-import com.example.maze.ui.screens.menu.MenuViewModelFactory
 
 @Composable
-fun AvatarCreationScreen(
-    onAvatarCreated: () -> Unit,
-    menuViewModel: MenuViewModel = viewModel(factory = MenuViewModelFactory(LocalContext.current))
-) {
+fun AvatarCreationScreen(onAvatarCreated: () -> Unit) {
+    // Gestione dello stato locale con mutableStateOf
+    var selectedColor by remember { mutableStateOf(Color.Transparent) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -26,28 +24,56 @@ fun AvatarCreationScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        ColorButton(color = Color.Red, menuViewModel, onAvatarCreated)
-        ColorButton(color = Color.Blue, menuViewModel, onAvatarCreated)
-        ColorButton(color = Color.Green, menuViewModel, onAvatarCreated)
-        ColorButton(color = Color.Yellow, menuViewModel, onAvatarCreated)
+        // Anteprima dell'avatar senza animazione
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .background(selectedColor)
+                .border(2.dp, Color.Black)
+                .padding(16.dp)
+        )
+
+        // Pulsanti per la selezione dei colori
+        val avatarColors = listOf(Color.Red, Color.Blue, Color.Green, Color.Yellow)
+        avatarColors.forEach { color ->
+            ColorButton(
+                color = color,
+                onClick = {
+                    selectedColor = color
+                    onAvatarCreated()
+                }
+            )
+        }
     }
 }
 
 @Composable
-private fun ColorButton(
+fun ColorButton(
     color: Color,
-    menuViewModel: MenuViewModel,
-    onAvatarCreated: () -> Unit
+    onClick: () -> Unit
 ) {
     Button(
-        onClick = {
-            menuViewModel.saveAvatar(Avatar(color))
-            onAvatarCreated()
-        },
+        onClick = onClick,
         modifier = Modifier
             .padding(vertical = 8.dp)
             .fillMaxWidth(0.7f)
     ) {
-        Text("${color.toString().substringAfter('(').substringBefore(')')} Avatar")
+        Text("${getColorName(color)} Avatar")
     }
+}
+
+fun getColorName(color: Color): String {
+    return when (color) {
+        Color.Red -> "Red"
+        Color.Blue -> "Blue"
+        Color.Green -> "Green"
+        Color.Yellow -> "Yellow"
+        else -> "Unknown"
+    }
+}
+
+@Preview(name = "Avatar Creation Screen", showBackground = true, widthDp = 360, heightDp = 640)
+@Composable
+fun AvatarCreationScreenPreview() {
+    AvatarCreationScreen(onAvatarCreated = { /* No-op */ })
 }
