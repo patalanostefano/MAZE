@@ -31,11 +31,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17  // Update to Java 17
+        targetCompatibility = JavaVersion.VERSION_17  // Update to Java 17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"  // Update to Java 17
     }
     buildFeatures {
         compose = true
@@ -46,11 +46,24 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // Add these lines to handle MongoDB conflicts
+            pickFirsts += "META-INF/native-image/org.mongodb/bson/native-image.properties"
+            pickFirsts += "META-INF/native-image/org.mongodb/mongodb-driver-core/native-image.properties"
+            pickFirsts += "META-INF/native-image/org.mongodb/mongodb-driver-sync/native-image.properties"
+            // Generic MongoDB related excludes
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE"
+            excludes += "META-INF/NOTICE"
+            excludes += "META-INF/*.kotlin_module"
         }
     }
 }
 
 dependencies {
+
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")  // Add this
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")  // Update version
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
     androidTestImplementation(composeBom)
@@ -62,6 +75,13 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+
+    // MongoDB Realm
+    implementation ("org.mongodb:mongodb-driver-sync:4.9.0")
+    implementation ("io.realm.kotlin:library-base:1.6.0")
+
+    // Network Service Discovery
+    implementation ("androidx.core:core-ktx:1.12.0")
 
     // Compose UI
     implementation(libs.androidx.ui)

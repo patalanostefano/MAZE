@@ -1,104 +1,98 @@
 package com.example.maze.data.repository
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
-import android.net.wifi.p2p.WifiP2pDevice
-import android.net.wifi.p2p.WifiP2pManager
-import android.os.Looper
-import androidx.core.app.ActivityCompat
-import com.example.maze.data.model.GameInvite
-import com.example.maze.data.model.Player
+import android.net.nsd.NsdServiceInfo
+import com.example.maze.data.model.User
+import com.example.maze.data.network.MongoDbService
+import com.example.maze.data.network.NsdHelper
+import com.example.maze.data.network.SocketHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 
-class MultiplayerRepository(private val context: Context) {
-    private val wifiP2pManager: WifiP2pManager by lazy {
-        context.getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
-    }
+class MultiplayerRepository(
+    private val context: Context,
+    private val mongoDbService: MongoDbService
+) {
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val nsdHelper = NsdHelper(context)
+    private var socketHelper: SocketHelper? = null
 
-    private val channel: WifiP2pManager.Channel by lazy {
-        wifiP2pManager.initialize(context, Looper.getMainLooper(), null)
-    }
+    private val _availablePlayers = MutableStateFlow<List<User>>(emptyList())
+    val availablePlayers: StateFlow<List<User>> = _availablePlayers
 
-    private val _availablePlayers = MutableStateFlow<List<WifiP2pDevice>>(emptyList())
-    val availablePlayers: StateFlow<List<WifiP2pDevice>> = _availablePlayers
-
-    private val inviteChannel = Channel<GameInvite>()
+    private val _currentUser = MutableStateFlow<User?>(null)
+    val currentUser: StateFlow<User?> = _currentUser
 
     sealed class DiscoveryResult {
         object Success : DiscoveryResult()
-        data class PermissionError(val permissions: List<String>) : DiscoveryResult()
         data class Error(val message: String) : DiscoveryResult()
+        data class PermissionError(val permissions: List<String>) : DiscoveryResult()
     }
 
-    fun startDiscovery(): DiscoveryResult {
-        // Check permissions first
-        val missingPermissions = REQUIRED_PERMISSIONS.filter {
-            ActivityCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+    init {
+        socketHelper = SocketHelper { message ->
+            handleIncomingMessage(message)
         }
+    }
 
-        if (missingPermissions.isNotEmpty()) {
-            return DiscoveryResult.PermissionError(missingPermissions)
-        }
+    suspend fun initializeUser(userId: String) {
+        _currentUser.value = mongoDbService.getUser(userId)
+    }
 
-        try {
-            // Safe to call after permission check
-            @Suppress("MissingPermission")
-            wifiP2pManager.discoverPeers(channel, object : WifiP2pManager.ActionListener {
-                override fun onSuccess() {
-                    // Discovery started successfully
-                    requestPeers()
+    suspend fun startDiscovery(): DiscoveryResult {
+        return try {
+            val currentUser = _currentUser.value ?: throw IllegalStateException("User not initialized")
+
+            nsdHelper.registerService("Player-${currentUser.id}")
+
+            // Update NsdHelper to handle service resolution
+            nsdHelper.setServiceFoundCallback { serviceInfo: NsdServiceInfo ->
+                val playerId = serviceInfo.serviceName.removePrefix("Player-")
+                coroutineScope.launch {
+                    val user = mongoDbService.getUser(playerId)
+                    user?.let { updateAvailablePlayers(it) }
                 }
-                override fun onFailure(reasonCode: Int) {
-                    // Handle failure
-                }
-            })
-            return DiscoveryResult.Success
+            }
+
+            nsdHelper.discoverServices()
+            DiscoveryResult.Success
         } catch (e: Exception) {
-            return DiscoveryResult.Error(e.message ?: "Unknown error occurred")
+            DiscoveryResult.Error(e.message ?: "Unknown error")
         }
     }
 
-    private fun requestPeers() {
-        if (!hasRequiredPermissions()) return
-
-        @Suppress("MissingPermission")
-        wifiP2pManager.requestPeers(channel) { peers ->
-            _availablePlayers.value = peers.deviceList.toList()
+    private fun updateAvailablePlayers(user: User) {
+        val currentList = _availablePlayers.value.toMutableList()
+        if (!currentList.contains(user)) {
+            currentList.add(user)
+            _availablePlayers.value = currentList
         }
     }
 
-    fun sendInvite(invite: GameInvite): DiscoveryResult {
-        if (!hasRequiredPermissions()) {
-            return DiscoveryResult.PermissionError(
-                REQUIRED_PERMISSIONS.filter {
-                    ActivityCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+    suspend fun sendInvite(toUser: User) {
+        val currentUser = _currentUser.value ?: return
+        socketHelper?.sendMessage("INVITE:${currentUser.id}:${toUser.id}")
+    }
+
+    private fun handleIncomingMessage(message: String) {
+        val parts = message.split(":")
+        when (parts[0]) {
+            "INVITE" -> {
+                val fromUserId = parts[1]
+                val toUserId = parts[2]
+                coroutineScope.launch {
+                    val fromUser = mongoDbService.getUser(fromUserId)
+                    // Handle invite UI update
                 }
-            )
-        }
-
-        try {
-            // Implement sending invite using WiFi P2P
-            return DiscoveryResult.Success
-        } catch (e: Exception) {
-            return DiscoveryResult.Error(e.message ?: "Unknown error occurred")
+            }
         }
     }
 
-    private fun hasRequiredPermissions(): Boolean {
-        return REQUIRED_PERMISSIONS.all {
-            ActivityCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
-        }
-    }
-
-    companion object {
-        private val REQUIRED_PERMISSIONS = arrayOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.NEARBY_WIFI_DEVICES,
-            Manifest.permission.ACCESS_WIFI_STATE,
-            Manifest.permission.CHANGE_WIFI_STATE
-        )
+    fun cleanup() {
+        nsdHelper.tearDown()
+        socketHelper?.close()
     }
 }
