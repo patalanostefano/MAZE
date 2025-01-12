@@ -1,16 +1,18 @@
 package com.example.maze.ui.screens.multiplayer
+
+import android.util.Log
 import androidx.compose.foundation.lazy.items
-import com.example.maze.data.model.User
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.maze.data.model.User
 import com.example.maze.data.model.GameInvite
-
 
 @Composable
 fun MultiplayerScreen(
@@ -18,61 +20,110 @@ fun MultiplayerScreen(
     onNavigateToGame: (GameInvite) -> Unit,
     viewModel: MultiplayerViewModel = viewModel(factory = MultiplayerViewModelFactory(LocalContext.current))
 ) {
-    val context = LocalContext.current
     val availablePlayers by viewModel.availablePlayers.collectAsState()
     val connectionState by viewModel.connectionState.collectAsState()
     val currentUser by viewModel.currentUser.collectAsState()
 
     LaunchedEffect(userId) {
-        viewModel.initialize(userId)
+        try {
+            viewModel.initialize(userId)
+        } catch (e: Exception) {
+            Log.e("MultiplayerScreen", "Error initializing: ${e.message}", e)
+        }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        when (val state = connectionState) {
+        when (connectionState) {
             is MultiplayerViewModel.ConnectionState.Initializing -> {
-                CircularProgressIndicator()
-                Text("Initializing...")
+                LoadingState(message = "Initializing...")
             }
-
             is MultiplayerViewModel.ConnectionState.Scanning -> {
-                CircularProgressIndicator()
-                Text("Scanning for nearby players...")
+                LoadingState(message = "Scanning for nearby players...")
             }
-
             is MultiplayerViewModel.ConnectionState.Connected -> {
-                currentUser?.let { user ->
-                    Text("Connected as: ${user.username}")
-                    PlayerList(
-                        players = availablePlayers.filter { it.id != user.id },
-                        onInvite = { player -> viewModel.sendInvite(player) }
-                    )
-                }
+                ConnectedState(
+                    currentUser = currentUser,
+                    availablePlayers = availablePlayers,
+                    onInvite = { player ->
+                        try {
+                            viewModel.sendInvite(player)
+                            // When invite is accepted, navigate to game
+                            currentUser?.let { current ->
+                                onNavigateToGame(GameInvite(
+                                    fromUser = current,
+                                    toUser = player
+                                ))
+                            }
+                        } catch (e: Exception) {
+                            Log.e("MultiplayerScreen", "Error sending invite: ${e.message}", e)
+                        }
+                    }
+                )
             }
-
-            is MultiplayerViewModel.ConnectionState.Error -> {  // Use the correct namespace
-                Text("Error: ${state.message}")
-                Button(onClick = { viewModel.startScanning() }) {
-                    Text("Retry")
-                }
+            is MultiplayerViewModel.ConnectionState.Error -> {
+                ErrorState(
+                    message = (connectionState as MultiplayerViewModel.ConnectionState.Error).message,
+                    onRetry = { viewModel.startScanning() }
+                )
             }
-
             is MultiplayerViewModel.ConnectionState.PermissionRequired -> {
-                // Handle other states
+                PermissionState(
+                    permissions = (connectionState as MultiplayerViewModel.ConnectionState.PermissionRequired).permissions
+                )
             }
         }
     }
-
 }
 
-    @Composable
-    private fun PlayerList(
-        players: List<User>,
-        onInvite: (User) -> Unit
+
+@Composable
+private fun LoadingState(message: String) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
+        CircularProgressIndicator()
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(text = message)
+    }
+}
+
+@Composable
+private fun ConnectedState(
+    currentUser: User?,
+    availablePlayers: List<User>,
+    onInvite: (User) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        currentUser?.let { user ->
+            Text(
+                text = "Connected as: ${user.username}",
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            PlayerList(
+                players = availablePlayers.filter { it.id != user.id },
+                onInvite = onInvite
+            )
+        } ?: Text("Error: User not initialized")
+    }
+}
+
+@Composable
+private fun PlayerList(
+    players: List<User>,
+    onInvite: (User) -> Unit
+) {
+    if (players.isEmpty()) {
+        Text(
+            text = "No players found nearby",
+            modifier = Modifier.padding(16.dp)
+        )
+    } else {
         LazyColumn {
             items(players) { player ->
                 PlayerCard(
@@ -82,33 +133,61 @@ fun MultiplayerScreen(
             }
         }
     }
+}
 
-
-
-
-
-
-
-    @Composable
-    private fun PlayerCard(
-        player: User,
-        onInvite: () -> Unit
+@Composable
+private fun PlayerCard(
+    player: User,
+    onInvite: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
     ) {
-        Card(
+        Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp)
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = player.username)
-                Button(onClick = onInvite) {
-                    Text("Invite")
-                }
+            Text(text = player.username)
+            Button(onClick = onInvite) {
+                Text("Invite")
             }
         }
     }
+}
+
+@Composable
+private fun ErrorState(
+    message: String,
+    onRetry: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(text = "Error: $message")
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = onRetry) {
+            Text("Retry")
+        }
+    }
+}
+
+@Composable
+private fun PermissionState(permissions: List<String>) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("Required Permissions:")
+        permissions.forEach { permission ->
+            Text("• $permission")
+        }
+    }
+}

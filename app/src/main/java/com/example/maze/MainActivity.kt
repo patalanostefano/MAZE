@@ -14,7 +14,10 @@ import androidx.navigation.compose.rememberNavController
 import com.example.maze.navigation.Screen
 import com.example.maze.ui.screens.avatar.AvatarCreationScreen
 import com.example.maze.ui.screens.menu.MainMenuScreen
+import com.example.maze.ui.screens.multiplayer.MultiplayerScreen
 import com.example.maze.ui.theme.MAZETheme
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,17 +42,57 @@ fun MazeApp() {
             ) {
                 composable(Screen.Menu.route) {
                     MainMenuScreen(
-                        onNavigateToAvatar = { navController.navigate(Screen.Avatar.route) },
-                        onNavigateToPlay = { navController.navigate(Screen.Gameplay.route) },
-                        onNavigateToMultiplayer = { navController.navigate(Screen.Multiplayer.route) }
+                        onNavigateToAvatar = {
+                            navController.navigate(Screen.Avatar.route)
+                        },
+                        onNavigateToPlay = {
+                            navController.navigate(Screen.Gameplay.route)
+                        },
+                        onNavigateToMultiplayer = {
+                            // Assuming you'll get the userId from MenuViewModel
+                            navController.navigate("${Screen.Multiplayer.route}/user123")
+                        }
                     )
                 }
+
                 composable(Screen.Avatar.route) {
                     AvatarCreationScreen(
-                        onAvatarCreated = { navController.navigateUp() }
+                        onAvatarCreated = {
+                            navController.navigateUp()
+                        }
                     )
                 }
-                // Other screens
+
+                composable(
+                    route = "${Screen.Multiplayer.route}/{userId}",
+                    arguments = listOf(
+                        navArgument("userId") {
+                            type = NavType.StringType
+                        }
+                    )
+                ) { backStackEntry ->
+                    val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+                    MultiplayerScreen(
+                        userId = userId,
+                        onNavigateToGame = { gameInvite ->
+                            navController.navigate("${Screen.Gameplay.route}/${gameInvite.gameId}")
+                        }
+                    )
+                }
+
+                composable(
+                    route = "${Screen.Gameplay.route}/{gameId}",
+                    arguments = listOf(
+                        navArgument("gameId") {
+                            type = NavType.StringType
+                            nullable = true
+                        }
+                    )
+                ) { backStackEntry ->
+                    val gameId = backStackEntry.arguments?.getString("gameId")
+                    // Your game screen implementation
+                    // GameScreen(gameId = gameId)
+                }
             }
         }
     }

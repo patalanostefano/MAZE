@@ -4,8 +4,12 @@ package com.example.maze.data.network
 import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
+import android.util.Log
 
-class NsdHelper(private val context: Context) {
+class NsdHelper(
+    context: Context,
+    private val serverSocketHelper: ServerSocketHelper
+) {
     private val nsdManager: NsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
     private val SERVICE_TYPE = "_maze._tcp."
     private var registrationListener: NsdManager.RegistrationListener? = null
@@ -16,21 +20,38 @@ class NsdHelper(private val context: Context) {
         serviceFoundCallback = callback
     }
 
-    fun registerService(serviceName: String) {
-        val serviceInfo = NsdServiceInfo().apply {
-            this.serviceName = serviceName
-            this.serviceType = SERVICE_TYPE
-            this.port = 0 // Choose an available port
-        }
+    suspend fun registerService(serviceName: String) {
+        try {
+            val port = serverSocketHelper.initializeServer()
 
-        registrationListener = object : NsdManager.RegistrationListener {
-            override fun onRegistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {}
-            override fun onUnregistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {}
-            override fun onServiceRegistered(serviceInfo: NsdServiceInfo) {}
-            override fun onServiceUnregistered(serviceInfo: NsdServiceInfo) {}
-        }
+            val serviceInfo = NsdServiceInfo().apply {
+                this.serviceName = serviceName
+                this.serviceType = SERVICE_TYPE
+                this.port = port
+            }
 
-        nsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
+            registrationListener = object : NsdManager.RegistrationListener {
+                override fun onRegistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+                    Log.e("NsdHelper", "Registration failed: $errorCode")
+                }
+
+                override fun onUnregistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+                    Log.e("NsdHelper", "Unregistration failed: $errorCode")
+                }
+
+                override fun onServiceRegistered(serviceInfo: NsdServiceInfo) {
+                    Log.d("NsdHelper", "Service registered: ${serviceInfo.serviceName}")
+                }
+
+                override fun onServiceUnregistered(serviceInfo: NsdServiceInfo) {
+                    Log.d("NsdHelper", "Service unregistered")
+                }
+            }
+
+            nsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
+        } catch (e: Exception) {
+            throw Exception("Failed to register service: ${e.message}")
+        }
     }
 
     fun discoverServices() {
