@@ -18,10 +18,17 @@ import com.example.maze.ui.screens.multiplayer.MultiplayerScreen
 import com.example.maze.ui.theme.MAZETheme
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.example.maze.ui.screens.labyrinth.LabyrinthSelectorScreen
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.ktx.initialize
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize Firebase
+        Firebase.initialize(this)
+
         setContent {
             MazeApp()
         }
@@ -46,7 +53,7 @@ fun MazeApp() {
                             navController.navigate(Screen.Avatar.route)
                         },
                         onNavigateToPlay = {
-                            navController.navigate(Screen.Gameplay.route)
+                            navController.navigate(Screen.LabyrinthSelector.route)
                         },
                         onNavigateToMultiplayer = {
                             // Assuming you'll get the userId from MenuViewModel
@@ -62,6 +69,16 @@ fun MazeApp() {
                         }
                     )
                 }
+
+                // Add this between Menu and Gameplay navigation
+                composable(Screen.LabyrinthSelector.route) {
+                    LabyrinthSelectorScreen(
+                        onLabyrinthSelected = { labyrinthId ->
+                            navController.navigate("${Screen.Gameplay.route}/$labyrinthId")
+                        }
+                    )
+                }
+
 
                 composable(
                     route = "${Screen.Multiplayer.route}/{userId}",

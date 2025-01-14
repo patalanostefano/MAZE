@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "815734058731",
+    "project_id": "maze-bb177",
+    "storage_bucket": "maze-bb177.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:815734058731:android:b33a53963a0b065bfed8ae",
+        "android_client_info": {
+          "package_name": "com.example.maze"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAA15qMBEvbaB7wJgJXVq_Dzf4b6IWWnVg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

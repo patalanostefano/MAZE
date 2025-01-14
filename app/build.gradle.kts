@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("kotlin-parcelize")
+    //id("com.google.gms.google-services")
 }
 
 android {
@@ -60,7 +61,13 @@ android {
 }
 
 dependencies {
+    // Import the Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:32.3.1")) //33.7.0 sugg by firestore
+    // sugg by firestore implementation("com.google.firebase:firebase-analytics")
+    implementation ("com.google.firebase:firebase-firestore-ktx")
 
+    // Firebase SDK for Storage
+    implementation ("com.google.firebase:firebase-storage-ktx")
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")  // Add this
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")  // Update version
@@ -107,3 +114,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
+
+
+
