@@ -12,25 +12,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
 import com.example.maze.data.model.Labyrinth
-import com.example.maze.data.network.FirebaseService
-import com.example.maze.data.repository.LabyrinthRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+
 
 @Composable
 fun LabyrinthSelectorScreen(
-    viewModel: LabyrinthSelectorViewModel = viewModel(),
-    onLabyrinthSelected: (String) -> Unit
-) {
+    viewModel: LabyrinthSelectorViewModel = viewModel(
+        factory = LabyrinthSelectorViewModelFactory()
+    ),
+    onLabyrinthSelected: (String) -> Unit) {
     val labyrinths by viewModel.labyrinths.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
@@ -99,28 +93,6 @@ private fun LabyrinthItem(
                     )
                 }
             }
-        }
-    }
-}
-
-class LabyrinthSelectorViewModel(
-    private val repository: LabyrinthRepository = LabyrinthRepository(FirebaseService())
-) : ViewModel() {
-    private val _labyrinths = MutableStateFlow<List<Labyrinth>>(emptyList())
-    val labyrinths: StateFlow<List<Labyrinth>> = _labyrinths.asStateFlow()
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    init {
-        loadLabyrinths()
-    }
-
-    private fun loadLabyrinths() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _labyrinths.value = repository.getAllLabyrinths()
-            _isLoading.value = false
         }
     }
 }

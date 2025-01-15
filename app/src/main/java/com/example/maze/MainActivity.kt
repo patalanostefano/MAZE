@@ -1,6 +1,7 @@
 package com.example.maze
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,7 +28,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // Initialize Firebase
-        Firebase.initialize(this)
+        try {
+            Firebase.initialize(this)
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error initializing Firebase: ${e.message}", e)
+        }
 
         setContent {
             MazeApp()

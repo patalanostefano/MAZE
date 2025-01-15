@@ -1,4 +1,4 @@
-package com.example.maze.ui.screens.labyrinith
+package com.example.maze.ui.screens.labyrinth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

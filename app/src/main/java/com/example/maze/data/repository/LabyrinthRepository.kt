@@ -11,7 +11,4 @@ class LabyrinthRepository(
         return firebaseService.getAllLabyrinths()
     }
 
-    suspend fun getLabyrinth(id: String): Labyrinth? {
-        return firebaseService.getLabyrinth(id)
-    }
 }
