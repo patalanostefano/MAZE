@@ -30,4 +30,17 @@ class FirebaseService {
             emptyList()
         }
     }
+
+    suspend fun getLabyrinth(id: String): Labyrinth? {
+        return try {
+            Log.d("FirebaseService", "Fetching labyrinth with id: $id")
+            val document = labyrinthsCollection.document(id).get().await()
+            document.toObject<Labyrinth>()?.also {
+                Log.d("FirebaseService", "Successfully fetched labyrinth: ${it.id}")
+            }
+        } catch (e: Exception) {
+            Log.e("FirebaseService", "Error fetching labyrinth: ${e.message}")
+            null
+        }
+    }
 }

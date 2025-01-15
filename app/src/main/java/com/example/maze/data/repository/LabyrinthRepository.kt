@@ -3,7 +3,6 @@ package com.example.maze.data.repository
 import com.example.maze.data.model.Labyrinth
 import com.example.maze.data.network.FirebaseService
 
-// data/repository/LabyrinthRepository.kt
 class LabyrinthRepository(
     private val firebaseService: FirebaseService
 ) {
@@ -11,4 +10,7 @@ class LabyrinthRepository(
         return firebaseService.getAllLabyrinths()
     }
 
+    suspend fun getLabyrinth(id: String): Labyrinth? {
+        return firebaseService.getLabyrinth(id)
+    }
 }

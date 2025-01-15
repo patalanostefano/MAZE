@@ -19,6 +19,7 @@ import com.example.maze.ui.screens.multiplayer.MultiplayerScreen
 import com.example.maze.ui.theme.MAZETheme
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.example.maze.ui.screens.gameplay.GameplayScreen
 import com.example.maze.ui.screens.labyrinth.LabyrinthSelectorScreen
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
@@ -61,7 +62,6 @@ fun MazeApp() {
                             navController.navigate(Screen.LabyrinthSelector.route)
                         },
                         onNavigateToMultiplayer = {
-                            // Assuming you'll get the userId from MenuViewModel
                             navController.navigate("${Screen.Multiplayer.route}/user123")
                         }
                     )
@@ -75,35 +75,54 @@ fun MazeApp() {
                     )
                 }
 
-                // Add this between Menu and Gameplay navigation
                 composable(Screen.LabyrinthSelector.route) {
                     LabyrinthSelectorScreen(
                         onLabyrinthSelected = { labyrinthId ->
-                            navController.navigate("${Screen.Gameplay.route}/$labyrinthId")
+                            navController.navigate(Screen.Gameplay.createRoute(labyrinthId))
                         }
                     )
                 }
 
-
                 composable(
-                    route = "${Screen.Multiplayer.route}/{userId}",
+                    route = Screen.Gameplay.route,
                     arguments = listOf(
-                        navArgument("userId") {
+                        navArgument("labyrinthId") {
                             type = NavType.StringType
                         }
                     )
                 ) { backStackEntry ->
-                    val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
-                    MultiplayerScreen(
-                        userId = userId,
-                        onNavigateToGame = { gameInvite ->
-                            navController.navigate("${Screen.Gameplay.route}/${gameInvite.gameId}")
+                    val labyrinthId = backStackEntry.arguments?.getString("labyrinthId")
+                        ?: return@composable
+                    GameplayScreen(
+                        labyrinthId = labyrinthId,
+                        onGameComplete = {
+                            navController.navigate(Screen.Menu.route) {
+                                popUpTo(Screen.Menu.route) { inclusive = true }
+                            }
                         }
                     )
                 }
 
                 composable(
-                    route = "${Screen.Gameplay.route}/{gameId}",
+                    route = "${Screen.Multiplayer.route}/{userId}",
+                    arguments = listOf(
+                        navArgument("userId") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val userId = backStackEntry.arguments?.getString("userId")
+                        ?: return@composable
+                    MultiplayerScreen(
+                        userId = userId,
+                        onNavigateToGame = { gameInvite ->
+                            navController.navigate(
+                                Screen.MultiplayerGameplay.createRoute(gameInvite.gameId)
+                            )
+                        }
+                    )
+                }
+
+                composable(
+                    route = Screen.MultiplayerGameplay.route,
                     arguments = listOf(
                         navArgument("gameId") {
                             type = NavType.StringType
@@ -112,10 +131,11 @@ fun MazeApp() {
                     )
                 ) { backStackEntry ->
                     val gameId = backStackEntry.arguments?.getString("gameId")
-                    // Your game screen implementation
-                    // GameScreen(gameId = gameId)
+                        ?: return@composable
+                    // Multiplayer game implementation
                 }
             }
         }
     }
 }
+
