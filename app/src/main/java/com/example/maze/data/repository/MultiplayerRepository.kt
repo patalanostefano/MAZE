@@ -3,7 +3,7 @@ package com.example.maze.data.repository
 import android.content.Context
 import android.util.Log
 import com.example.maze.data.model.User
-import com.example.maze.data.network.MongoDbService
+import com.example.maze.data.network.UserActions
 import com.example.maze.data.network.NsdHelper
 import com.example.maze.data.network.ServerSocketHelper
 import com.example.maze.data.network.SocketHelper
@@ -16,7 +16,7 @@ import kotlinx.coroutines.withContext
 
 class MultiplayerRepository(
     context: Context,
-    private val mongoDbService: MongoDbService
+    private val userActions: UserActions
 ) {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private val serverSocketHelper = ServerSocketHelper()
@@ -43,7 +43,7 @@ class MultiplayerRepository(
 
     suspend fun initializeUser(userId: String) {
         try {
-            _currentUser.value = mongoDbService.getUser(userId)
+            _currentUser.value = userActions.getUserById(userId)
         } catch (e: Exception) {
             Log.e("MultiplayerRepository", "Failed to initialize user: ${e.message}")
             throw e
@@ -68,7 +68,7 @@ class MultiplayerRepository(
                         val playerId = serviceInfo.serviceName.removePrefix("Player-")
                         coroutineScope.launch {
                             try {
-                                val user = mongoDbService.getUser(playerId)
+                                val user = userActions.getUserById(playerId)
                                 user?.let { updateAvailablePlayers(it) }
                             } catch (e: Exception) {
                                 Log.e("MultiplayerRepository", "Error processing found service: ${e.message}")
@@ -118,7 +118,7 @@ class MultiplayerRepository(
                 val fromUserId = parts[1]
                 coroutineScope.launch {
                     try {
-                        val fromUser = mongoDbService.getUser(fromUserId)
+                        val fromUser = userActions.getUserById(fromUserId)
                         Log.d("MultiplayerRepository", "Received invite from: ${fromUser?.username}")
                         // Handle invite UI update
                     } catch (e: Exception) {
