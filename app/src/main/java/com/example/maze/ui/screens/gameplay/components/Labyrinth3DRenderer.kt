@@ -7,10 +7,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import com.example.maze.data.model.Position
-import kotlin.math.max
-import kotlin.math.min
+import kotlin.math.pow
+import androidx.compose.ui.graphics.Path
+import kotlin.math.pow
+import androidx.compose.ui.graphics.drawscope.Fill
+
 
 @Composable
 fun Labyrinth3DRenderer(
@@ -19,12 +21,13 @@ fun Labyrinth3DRenderer(
     modifier: Modifier = Modifier
 ) {
     val vanishingPoint = remember {
-        Offset(0f, -500f) // Adjust for desired perspective
+        Offset(500f, -300f) // Adjusted for better perspective
     }
 
     Canvas(modifier = modifier.fillMaxSize()) {
         val cellSize = size.width / labyrinth[0].size
-        val viewDistance = 5 // Number of cells visible around player
+        val wallHeight = cellSize * 1.5f // Taller walls
+        val viewDistance = 8 // Increased view distance
 
         // Calculate visible area
         val startY = maxOf(0, playerPosition.y - viewDistance)
@@ -32,37 +35,36 @@ fun Labyrinth3DRenderer(
         val startX = maxOf(0, playerPosition.x - viewDistance)
         val endX = minOf(labyrinth[0].size - 1, playerPosition.x + viewDistance)
 
-        // Draw visible walls
+        // Draw walls from back to front
         for (y in startY..endY) {
             for (x in startX..endX) {
                 if (labyrinth[y][x] == 1) {
-                    // Calculate wall corners
-                    val topLeft = transformPoint(
+                    val wallTop = transformPoint(
                         Offset(x * cellSize, y * cellSize),
                         vanishingPoint,
                         size.height
                     )
-                    val topRight = transformPoint(
-                        Offset((x + 1) * cellSize, y * cellSize),
-                        vanishingPoint,
-                        size.height
-                    )
-                    val bottomLeft = transformPoint(
-                        Offset(x * cellSize, (y + 1) * cellSize),
-                        vanishingPoint,
-                        size.height
-                    )
-                    val bottomRight = transformPoint(
-                        Offset((x + 1) * cellSize, (y + 1) * cellSize),
+                    val wallBottom = transformPoint(
+                        Offset(x * cellSize, y * cellSize + wallHeight),
                         vanishingPoint,
                         size.height
                     )
 
-                    // Draw wall
-                    drawLine(Color.Black, topLeft, topRight, 5f)
-                    drawLine(Color.Black, topRight, bottomRight, 5f)
-                    drawLine(Color.Black, bottomRight, bottomLeft, 5f)
-                    drawLine(Color.Black, bottomLeft, topLeft, 5f)
+                    // Draw wall with shading based on distance
+                    val distance = kotlin.math.sqrt(
+                        (x - playerPosition.x).toFloat().pow(2) +
+                                (y - playerPosition.y).toFloat().pow(2)
+                    )
+                    val opacity = (1f - (distance / viewDistance)).coerceIn(0.2f, 1f)
+
+                    drawRect(
+                        color = Color.Black.copy(alpha = opacity),
+                        topLeft = wallTop,
+                        size = androidx.compose.ui.geometry.Size(
+                            width = cellSize,
+                            height = wallBottom.y - wallTop.y
+                        )
+                    )
                 }
             }
         }

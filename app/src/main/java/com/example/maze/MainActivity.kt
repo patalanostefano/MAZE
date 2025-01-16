@@ -95,11 +95,12 @@ fun MazeApp() {
                         ?: return@composable
                     GameplayScreen(
                         labyrinthId = labyrinthId,
-                        onGameComplete = {
+                        onExit = {  // Changed from onGameComplete to onExit
                             navController.navigate(Screen.Menu.route) {
                                 popUpTo(Screen.Menu.route) { inclusive = true }
                             }
-                        }
+                        },
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
 
