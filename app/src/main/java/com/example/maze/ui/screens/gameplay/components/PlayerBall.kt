@@ -2,7 +2,6 @@
 package com.example.maze.ui.screens.gameplay.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -10,40 +9,35 @@ import androidx.compose.ui.graphics.Color
 import com.example.maze.data.model.Position
 
 
+// ui/screens/gameplay/components/PlayerBall.kt
 @Composable
 fun PlayerBall(
     position: Position,
+    fullImageSize: Pair<Int, Int>,
+    currentQuadrant: Int,
     color: Color,
     modifier: Modifier = Modifier
 ) {
-    Canvas(modifier.fillMaxSize()) {
-        val ballRadius = 30f
+    Canvas(modifier = modifier) {
+        val quadrantWidth = size.width
+        val quadrantHeight = size.height
 
-        // Position ball in the screen based on model coordinates
-        val ballCenter = Offset(
-            x = position.x.toFloat(),
-            y = position.y.toFloat()
-        )
+        // Adjust position based on quadrant
+        val quadrantOffsetX = (currentQuadrant % 2) * (fullImageSize.first / 2)
+        val quadrantOffsetY = (currentQuadrant / 2) * (fullImageSize.second / 2)
 
-        // Draw the shadow and ball using method from your original PlayerBall.kt
-        drawCircle(
-            color = Color.Black.copy(alpha = 0.3f),
-            radius = ballRadius * 1.1f,
-            center = ballCenter + Offset(5f, 5f)
-        )
+        // Calculate relative position within the quadrant
+        val relativeX = position.x - quadrantOffsetX
+        val relativeY = position.y - quadrantOffsetY
+
+        // Convert to screen coordinates
+        val screenX = (relativeX.toFloat() / (fullImageSize.first / 2)) * quadrantWidth
+        val screenY = (relativeY.toFloat() / (fullImageSize.second / 2)) * quadrantHeight
 
         drawCircle(
             color = color,
-            radius = ballRadius,
-            center = ballCenter
-        )
-
-        // Optional light effect
-        drawCircle(
-            color = Color.White.copy(alpha = 0.5f),
-            radius = ballRadius * 0.4f,
-            center = ballCenter + Offset(-ballRadius * 0.3f, -ballRadius * 0.3f)
+            radius = 20f,
+            center = Offset(screenX, screenY)
         )
     }
 }
-
