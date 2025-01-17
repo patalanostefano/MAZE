@@ -1,8 +1,10 @@
 package com.example.maze.ui.screens.menu
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -12,6 +14,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun MainMenuScreen(
+    onNavigateToAuth: () -> Unit,
     onNavigateToAvatar: () -> Unit,
     onNavigateToPlay: () -> Unit,
     onNavigateToMultiplayer: () -> Unit,
@@ -26,6 +29,15 @@ fun MainMenuScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Button( //Add ifnotlogged in func
+            onClick = onNavigateToAuth,
+            modifier = Modifier
+                .padding(vertical = 8.dp)
+                .fillMaxWidth(0.7f)
+        ) {
+            Text("Login")
+        }
+
         Button(
             onClick = onNavigateToAvatar,
             modifier = Modifier
