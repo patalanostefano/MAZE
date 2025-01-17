@@ -1,7 +1,6 @@
 // ui/screens/gameplay/GameplayViewModel.kt
 package com.example.maze.ui.screens.gameplay
 
-import android.content.Context
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import androidx.lifecycle.ViewModel
@@ -19,9 +18,8 @@ import kotlinx.coroutines.launch
 class GameplayViewModel(
     private val labyrinthId: String,
     private val repository: LabyrinthRepository,
-    sensorManager: SensorManager // Changed from context to direct SensorManager
+    private val sensorManager: SensorManager // Directly declare as property
 ) : ViewModel() {
-    private val sensorManager = sensorManager
 
     private val _labyrinth = MutableStateFlow<Labyrinth?>(null)
     val labyrinth: StateFlow<Labyrinth?> = _labyrinth.asStateFlow()
@@ -66,10 +64,16 @@ class GameplayViewModel(
         val currentPosition = _playerPosition.value ?: return
         val velocity = _ballVelocity.value
 
-        // Update velocity with acceleration
+        // Scale factors for more natural movement
+        val accelerationScale = 0.5f
+        val maxVelocity = 10f
+
+        // Update velocity with scaled acceleration
         val newVelocity = Velocity(
-            x = velocity.x + accelerationX * FRAME_TIME,
-            y = velocity.y + accelerationY * FRAME_TIME
+            x = (velocity.x + accelerationX * accelerationScale * FRAME_TIME)
+                .coerceIn(-maxVelocity, maxVelocity),
+            y = (velocity.y + accelerationY * accelerationScale * FRAME_TIME)
+                .coerceIn(-maxVelocity, maxVelocity)
         )
 
         // Calculate new position
@@ -78,6 +82,7 @@ class GameplayViewModel(
             y = currentPosition.y + (newVelocity.y * FRAME_TIME).toInt()
         )
 
+        // Check collision and update position
         if (_labyrinth.value?.isValidPosition(newPosition) == true) {
             _playerPosition.value = newPosition
             _ballVelocity.value = newVelocity
@@ -87,10 +92,14 @@ class GameplayViewModel(
                 _gameState.value = GameState.Won
             }
         } else {
-            // Collision with wall - stop movement
-            _ballVelocity.value = Velocity(0f, 0f)
+            // Collision handling - bounce effect
+            _ballVelocity.value = Velocity(
+                x = if (newPosition.x != currentPosition.x) -velocity.x * 0.5f else velocity.x,
+                y = if (newPosition.y != currentPosition.y) -velocity.y * 0.5f else velocity.y
+            )
         }
     }
+
 
     fun showHint() {
         viewModelScope.launch {
