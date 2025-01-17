@@ -28,7 +28,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.maze.ui.screens.gameplay.components.Labyrinth3DRenderer
+import com.example.maze.ui.screens.gameplay.components.Labyrinth2DRenderer
 import com.example.maze.ui.screens.gameplay.components.PlayerBall
 import com.example.maze.utils.LockScreenOrientation
 
@@ -49,6 +49,7 @@ fun GameplayScreen(
     val labyrinth by viewModel.labyrinth.collectAsState()
     val playerPosition by viewModel.playerPosition.collectAsState()
     val isHintVisible by viewModel.isHintVisible.collectAsState()
+    val currentQuadrant by viewModel.currentQuadrant.collectAsState()
     var showExitDialog by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -69,16 +70,22 @@ fun GameplayScreen(
                                 .background(Color.White)
                         )
 
-                        Labyrinth3DRenderer(
-                            labyrinth = maze.getStructureArray(),
+                        // Use the 2D Renderer now
+                        Labyrinth2DRenderer(
+                            fullImageUrl = maze.fullImageUrl,
                             playerPosition = playerPosition ?: maze.startPosition,
                             modifier = Modifier.fillMaxSize()
                         )
 
+                        // PlayerBall overlays the Labyrinth2DRenderer
                         PlayerBall(
                             position = playerPosition ?: maze.startPosition,
+                            fullImageSize = Pair(maze.width, maze.height),
+                            currentQuadrant = currentQuadrant, // Now using the collected state
                             color = Color.Blue,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .size(40.dp)
+                                .align(Alignment.Center)
                         )
 
                         // Top-right buttons
@@ -125,6 +132,7 @@ fun GameplayScreen(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .background(Color.Black.copy(alpha = 0.8f))
+                                    .padding(32.dp)
                             ) {
                                 maze.fullImageUrl.takeIf { it.isNotEmpty() }?.let { imageUrl ->
                                     val bitmap = remember(imageUrl) {
@@ -136,8 +144,7 @@ fun GameplayScreen(
                                             bitmap = it.asImageBitmap(),
                                             contentDescription = "Maze hint",
                                             modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(32.dp),
+                                                .fillMaxSize(),
                                             contentScale = ContentScale.Fit
                                         )
                                     }
@@ -183,4 +190,3 @@ fun GameplayScreen(
         }
     }
 }
-
