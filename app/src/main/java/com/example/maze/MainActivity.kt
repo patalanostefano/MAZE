@@ -55,6 +55,9 @@ fun MazeApp() {
             ) {
                 composable(Screen.Menu.route) {
                     MainMenuScreen(
+                        onNavigateToAuth = {
+                            navController.navigate(Screen.Auth.route)
+                        },
                         onNavigateToAvatar = {
                             navController.navigate(Screen.Avatar.route)
                         },
