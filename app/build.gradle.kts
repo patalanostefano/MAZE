@@ -78,6 +78,12 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.1")
 
+    //Firestore for accounts
+    implementation("com.google.firebase:firebase-firestore-ktx")
+
+    //Jetpack datastore for account management
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
 
     //coil
     implementation("io.coil-kt:coil-compose:2.4.0")
@@ -86,9 +92,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
 
-    // MongoDB Realm
-    implementation ("org.mongodb:mongodb-driver-sync:4.9.0")
-    implementation ("io.realm.kotlin:library-base:1.6.0")
 
     // Network Service Discovery
     implementation ("androidx.core:core-ktx:1.12.0")

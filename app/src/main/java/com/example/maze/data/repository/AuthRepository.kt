@@ -1,64 +1,69 @@
 package com.example.maze.data.repository
 
+import android.util.Log
 import com.example.maze.data.model.User
-import com.mongodb.client.MongoClients
-import com.mongodb.client.MongoCollection
-import com.mongodb.client.MongoDatabase
-import org.bson.Document
+import com.example.maze.data.network.UserActions
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 /**
- * Handles communication with mongo.
+ * Handles communication with Firestore.
  */
-class AuthRepository{
+class AuthRepository : UserActions {
+    private val firestore = FirebaseFirestore.getInstance()
+    private val usersCollection = firestore.collection("users")
 
-    //Static initialization. We need this once across all.
-    //Not very secure. Exposed URL
-    companion object {
-        private val client = MongoClients.create("mongodb+srv://jay:jayjayjay@users.xjxxl.mongodb.net/?retryWrites=true&w=majority&appName=users")
-        private val database: MongoDatabase = client.getDatabase("appgame")
-        private val collection: MongoCollection<Document> = database.getCollection("Users")
-    }
-
-    private fun documentToUser(document: Document): User {
+    private fun documentToUser(document: Map<String, Any>): User {
         return User(
-            id = document.getObjectId("_id").toString(),
-            username = document.getString("username"),
-            avatarColor = document.getInteger("avatarColor")
+            id = document["id"] as? String,
+            username = document["username"] as String,
+            avatarColor = (document["avatarColor"] as? Long)?.toInt() ?: 0
         )
     }
 
-    private fun userToDocument(user: User): Document {
-        return Document()
-            .append("username",user.username)
-            .append("avatarColor",user.avatarColor)
-    }
-
-    fun getUserByName(username: String): User? {
-        val document = collection.find(Document("username",username)).firstOrNull()
-        return document?.let { documentToUser(it) }
-    }
-
-    fun getUserById(id: String): User? {
-        val document = collection.find(Document("_id",id)).firstOrNull()
-        return document?.let { documentToUser(it) }
-    }
-
-    fun createUser(username: String, avatarColor: Int): User {
-        val user = User(id = null, username = username, avatarColor = avatarColor)
-        val document = userToDocument(user)
-        collection.insertOne(document)
-        val id = document.getObjectId("_id").toString()
-        return user.copy(id = id)
-    }
-
-    fun updateUser(user: User): Boolean {
-        val filter = Document("_id", org.bson.types.ObjectId(user.id))
-        val update = Document("\$set", Document()
-            .append("username",user.username)
-            .append("avatarColor",user.avatarColor)
+    private fun userToDocument(user: User): Map<String, Any> {
+        return mapOf(
+            "username" to user.username,
+            "avatarColor" to user.avatarColor
         )
+    }
 
-        val res = collection.updateOne(filter,update)
-        return res.modifiedCount > 0 //maybe ==1 ?
+    override suspend fun getUserByName(username: String): User? {
+        val querySnapshot = usersCollection
+            .whereEqualTo("username", username)
+            .get()
+            .await()
+
+        return querySnapshot.documents.firstOrNull()?.let {
+            documentToUser(it.data ?: emptyMap())
+        }
+    }
+
+    override suspend fun getUserById(id: String): User? {
+        val documentSnapshot = usersCollection.document(id).get().await()
+        return if (documentSnapshot.exists()) {
+            documentToUser(documentSnapshot.data ?: emptyMap())
+        } else {
+            null
+        }
+    }
+
+    override suspend fun createUser(username: String, avatarColor: Int): User {
+        val newUser = User(id = null, username = username, avatarColor = avatarColor)
+        val documentRef = usersCollection.add(userToDocument(newUser)).await()
+
+        Log.i("New user created in Firebase: $username",username)
+        return newUser.copy(id = documentRef.id)
+    }
+
+    override suspend fun updateUser(user: User): Boolean {
+        if (user.id == null) return false
+
+        usersCollection.document(user.id)
+            .set(userToDocument(user))
+            .await()
+
+        // Firestore doesn't return modified count; assume success if no exception
+        return true
     }
 }

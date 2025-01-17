@@ -20,7 +20,17 @@ class AuthService(
     }
 
     override suspend fun updateUser(user: User): Boolean {
-        // Temporary implementation for testing
-        return true
+        return authRepository.updateUser(user)
     }
-}
+
+    //Extremely basic.
+    suspend fun login(username: String): User { //Rename vars?
+        val user = getUserByName(username)
+
+        if(user == null) {
+            throw NoSuchElementException("User not found")
+        }
+
+        return user
+    }
+ }

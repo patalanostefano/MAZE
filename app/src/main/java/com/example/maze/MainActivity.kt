@@ -1,5 +1,6 @@
 package com.example.maze
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -8,7 +9,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -19,12 +30,23 @@ import com.example.maze.ui.screens.multiplayer.MultiplayerScreen
 import com.example.maze.ui.theme.MAZETheme
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.example.maze.data.network.AuthService
+import com.example.maze.data.repository.AuthRepository
+import com.example.maze.ui.screens.auth.AuthPage
+import com.example.maze.ui.screens.auth.PreferencesManager
 import com.example.maze.ui.screens.gameplay.GameplayScreen
 import com.example.maze.ui.screens.labyrinth.LabyrinthSelectorScreen
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
+import kotlinx.coroutines.launch
+
+val Context.dataStore by preferencesDataStore(name = "user_prefs")
+
 
 class MainActivity : ComponentActivity() {
+    private lateinit var authService: AuthService
+    private lateinit var authRepository: AuthRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -35,23 +57,37 @@ class MainActivity : ComponentActivity() {
             Log.e("MainActivity", "Error initializing Firebase: ${e.message}", e)
         }
 
+        //Initialize Firestore
+        try {
+            authRepository = AuthRepository()
+            authService = AuthService(authRepository)
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error initializing Auth: ${e.message}", e)
+        }
+
         setContent {
-            MazeApp()
+            MazeApp(authService)
         }
     }
 }
 
 @Composable
-fun MazeApp() {
+fun MazeApp(authService: AuthService) {
+    val context = LocalContext.current
+    val userSessionFlow = remember { PreferencesManager(context).getUserSession() }
+    val userSession by userSessionFlow.collectAsState(initial = false to null) //Stores local user session
+
     MAZETheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
             val navController = rememberNavController()
+            val loggedIn = userSession.first && userSession.second != null
+
             NavHost(
                 navController = navController,
-                startDestination = Screen.Menu.route
+                startDestination = if (!loggedIn) Screen.Auth.route else Screen.Menu.route
             ) {
                 composable(Screen.Menu.route) {
                     MainMenuScreen(
@@ -65,7 +101,44 @@ fun MazeApp() {
                             navController.navigate(Screen.LabyrinthSelector.route)
                         },
                         onNavigateToMultiplayer = {
-                            navController.navigate("${Screen.Multiplayer.route}/user123")
+                            navController.navigate("${Screen.Multiplayer.route}/${userSession.second}") //Gets username from saved state
+                        }
+                    )
+                }
+
+                composable(Screen.Auth.route) {
+                    val coroutineScope = rememberCoroutineScope()
+
+                    AuthPage(
+                        onLogin = { userName ->
+                            coroutineScope.launch {
+                                try {
+                                    authService.login(userName)
+                                    navController.navigate(Screen.Menu.route)
+                                } catch(e: Exception) {
+                                    Log.e("MainActivity","Failed to login: ${e.message}", e)
+                                }
+                            }
+                        },
+                        onRegister = { userName ->
+                            coroutineScope.launch {
+                                authService.createUser(userName, 1)
+                            }
+                        },
+                        setRememberMe = { rememberMe ->
+                            coroutineScope.launch {
+                                context.dataStore.edit { preferences ->
+                                    preferences[booleanPreferencesKey("remember_me")] = rememberMe
+                                }
+                            }
+                        },
+                        saveSession = { rememberMe, session ->
+                            coroutineScope.launch {
+                                context.dataStore.edit { preferences ->
+                                    preferences[booleanPreferencesKey("remember_me")] = rememberMe
+                                    preferences[stringPreferencesKey("session")] = session
+                                }
+                            }
                         }
                     )
                 }
@@ -141,5 +214,11 @@ fun MazeApp() {
             }
         }
     }
-}
 
+    @Composable
+    fun AuthPageContent(authService: AuthService, userName: String) {
+        LaunchedEffect(userName) {
+            authService.createUser(userName, 1)
+        }
+    }
+}
