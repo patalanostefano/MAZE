@@ -65,12 +65,12 @@ class GameplayViewModel(
         val velocity = _ballVelocity.value
 
         // Scale factors for more natural movement
-        val accelerationScale = 0.5f
-        val maxVelocity = 10f
+        val accelerationScale = 0.3f
+        val maxVelocity = 5f
 
-        // Update velocity with scaled acceleration
+        // Update velocity (reversed for intuitive control)
         val newVelocity = Velocity(
-            x = (velocity.x + accelerationX * accelerationScale * FRAME_TIME)
+            x = (velocity.x - accelerationX * accelerationScale * FRAME_TIME)
                 .coerceIn(-maxVelocity, maxVelocity),
             y = (velocity.y + accelerationY * accelerationScale * FRAME_TIME)
                 .coerceIn(-maxVelocity, maxVelocity)
@@ -87,18 +87,18 @@ class GameplayViewModel(
             _playerPosition.value = newPosition
             _ballVelocity.value = newVelocity
 
-            // Check win condition
             if (_labyrinth.value?.isEndPosition(newPosition) == true) {
                 _gameState.value = GameState.Won
             }
         } else {
-            // Collision handling - bounce effect
+            // Bounce effect
             _ballVelocity.value = Velocity(
                 x = if (newPosition.x != currentPosition.x) -velocity.x * 0.5f else velocity.x,
                 y = if (newPosition.y != currentPosition.y) -velocity.y * 0.5f else velocity.y
             )
         }
     }
+
 
 
     fun showHint() {

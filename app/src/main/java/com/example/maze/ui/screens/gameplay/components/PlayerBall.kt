@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import com.example.maze.data.model.Position
 
 @Composable
@@ -16,41 +15,37 @@ fun PlayerBall(
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier = modifier) {
-        drawBall(position, color)
+        val horizonY = size.height * 0.4f
+        val ballRadius = 30f
+
+        // Position ball near bottom center of screen
+        val ballCenter = Offset(
+            x = size.width / 2f,
+            y = size.height - ballRadius * 2f
+        )
+
+        // Draw shadow
+        drawCircle(
+            color = Color.Black.copy(alpha = 0.3f),
+            radius = ballRadius * 1.1f,
+            center = ballCenter.copy(x = ballCenter.x + 5f, y = ballCenter.y + 5f)
+        )
+
+        // Draw main ball
+        drawCircle(
+            color = color,
+            radius = ballRadius,
+            center = ballCenter
+        )
+
+        // Draw highlight
+        drawCircle(
+            color = Color.White.copy(alpha = 0.5f),
+            radius = ballRadius * 0.4f,
+            center = ballCenter.copy(
+                x = ballCenter.x - ballRadius * 0.3f,
+                y = ballCenter.y - ballRadius * 0.3f
+            )
+        )
     }
-}
-
-private fun DrawScope.drawBall(position: Position, color: Color) {
-    val cellSize = size.width / 30f  // Adjust based on your labyrinth size
-    val radius = cellSize / 2
-
-    // Add shadow for 3D effect
-    drawCircle(
-        color = Color.Black.copy(alpha = 0.3f),
-        radius = radius * 1.1f,
-        center = Offset(
-            x = (position.x * cellSize) + cellSize / 2 + radius * 0.2f,
-            y = (position.y * cellSize) + cellSize / 2 + radius * 0.2f
-        )
-    )
-
-    // Draw the ball with gradient for 3D effect
-    drawCircle(
-        color = color,
-        radius = radius,
-        center = Offset(
-            x = (position.x * cellSize) + cellSize / 2,
-            y = (position.y * cellSize) + cellSize / 2
-        )
-    )
-
-    // Add highlight for 3D effect
-    drawCircle(
-        color = Color.White.copy(alpha = 0.5f),
-        radius = radius * 0.5f,
-        center = Offset(
-            x = (position.x * cellSize) + cellSize / 3,
-            y = (position.y * cellSize) + cellSize / 3
-        )
-    )
 }

@@ -7,9 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import com.example.maze.data.model.Position
+import kotlin.math.sqrt
 
 @Composable
 fun Labyrinth3DRenderer(
@@ -20,89 +20,116 @@ fun Labyrinth3DRenderer(
     Canvas(modifier = modifier.fillMaxSize()) {
         val canvasWidth = size.width
         val canvasHeight = size.height
-        val horizonY = canvasHeight * 0.4f // Horizon line at 40% from the top
-        val perspectivePoint = Offset(canvasWidth / 2f, horizonY)
-        val viewDistance = 10 // Number of cells ahead to render
+        val horizonY = canvasHeight * 0.4f // Horizon line
+        val floorEndY = canvasHeight // Bottom of screen
 
-        // Iterate through cells in front of the player within the view distance
-        for (distance in 1..viewDistance) {
-            // Calculate the row in front based on distance
-            val currentRow = playerPosition.y - distance
-            if (currentRow < 0 || currentRow >= labyrinth.size) continue
+        // Draw background
+        drawRect(
+            color = Color.White,
+            topLeft = Offset.Zero,
+            size = size
+        )
 
-            val numberOfWalls = labyrinth[currentRow].size
-            for (x in 0 until numberOfWalls) {
-                if (labyrinth[currentRow][x] == 1) {
-                    // Calculate the relative position of the wall to the player
-                    val relativeX = x - playerPosition.x
+        // Draw floor (perspective grid)
+        drawFloor(
+            horizonY = horizonY,
+            floorEndY = floorEndY,
+            canvasWidth = canvasWidth
+        )
 
-                    // Simple perspective scaling based on distance
-                    val scale = 1 / distance.toFloat()
-
-                    // Define wall width and height based on perspective
-                    val wallWidth = 100f * scale
-                    val wallHeight = 200f * scale
-
-                    // Calculate the screen positions
-                    val screenX = perspectivePoint.x + relativeX * 150f * scale
-                    val screenY = horizonY + wallHeight / 2
-
-                    // Define the wall's four corners to form a rectangle
-                    val wallPath = Path().apply {
-                        moveTo(screenX - wallWidth / 2, screenY - wallHeight / 2)
-                        lineTo(screenX + wallWidth / 2, screenY - wallHeight / 2)
-                        lineTo(screenX + wallWidth / 2, screenY + wallHeight / 2)
-                        lineTo(screenX - wallWidth / 2, screenY + wallHeight / 2)
-                        close()
-                    }
-
-                    // Draw the wall with shading based on distance
-                    drawPath(
-                        path = wallPath,
-                        color = Color.Black.copy(alpha = 1f - (distance.toFloat() / viewDistance))
-                    )
-                }
-            }
-        }
-
-        // Optionally, draw the floor grid for better depth perception
-        drawFloorGrid(
-            perspectivePoint = perspectivePoint,
-            bottomY = canvasHeight,
-            gridLines = viewDistance,
-            cellSize = 150f
+        // Draw walls in perspective
+        drawWalls(
+            labyrinth = labyrinth,
+            playerPosition = playerPosition,
+            horizonY = horizonY,
+            floorEndY = floorEndY,
+            canvasWidth = canvasWidth
         )
     }
 }
 
-private fun DrawScope.drawFloorGrid(
-    perspectivePoint: Offset,
-    bottomY: Float,
-    gridLines: Int,
-    cellSize: Float
+private fun DrawScope.drawFloor(
+    horizonY: Float,
+    floorEndY: Float,
+    canvasWidth: Float
 ) {
-    val lineColor = Color.LightGray.copy(alpha = 0.3f)
-    for (i in 1..gridLines) {
-        val distance = i.toFloat()
-        val scale = 1 / distance
+    val gridLines = 10
+    val centerX = canvasWidth / 2f
 
-        // Horizontal grid lines
-        val y = bottomY - (bottomY - perspectivePoint.y) * scale
-        drawLine(
-            color = lineColor,
-            start = Offset(0f, y),
-            end = Offset(size.width, y),
-            strokeWidth = 1f
-        )
+    // Draw perspective lines
+    for (i in 0..gridLines) {
+        val fraction = i.toFloat() / gridLines
+        val startX = fraction * canvasWidth
 
-        // Vertical grid lines
-        val xStart = perspectivePoint.x - (size.width / 2) * scale
-        val xEnd = perspectivePoint.x + (size.width / 2) * scale
+        // Draw lines converging to center
         drawLine(
-            color = lineColor,
-            start = Offset(xStart, y),
-            end = Offset(xEnd, y),
+            color = Color.LightGray.copy(alpha = 0.3f),
+            start = Offset(startX, floorEndY),
+            end = Offset(centerX, horizonY),
             strokeWidth = 1f
         )
     }
+
+    // Draw horizontal lines for depth
+    for (i in 1..gridLines) {
+        val y = lerp(floorEndY, horizonY, i.toFloat() / gridLines)
+        val xOffset = (i.toFloat() / gridLines) * centerX
+
+        drawLine(
+            color = Color.LightGray.copy(alpha = 0.3f),
+            start = Offset(centerX - xOffset, y),
+            end = Offset(centerX + xOffset, y),
+            strokeWidth = 1f
+        )
+    }
+}
+
+private fun DrawScope.drawWalls(
+    labyrinth: List<List<Int>>,
+    playerPosition: Position,
+    horizonY: Float,
+    floorEndY: Float,
+    canvasWidth: Float
+) {
+    val centerX = canvasWidth / 2f
+    val viewDistance = 4
+    val wallSegmentWidth = canvasWidth / 8f
+
+    // Get visible area around player
+    val visibleRows = (playerPosition.y - viewDistance)..(playerPosition.y + viewDistance)
+    val visibleCols = (playerPosition.x - viewDistance)..(playerPosition.x + viewDistance)
+
+    for (row in visibleRows) {
+        if (row < 0 || row >= labyrinth.size) continue
+
+        for (col in visibleCols) {
+            if (col < 0 || col >= labyrinth[row].size) continue
+
+            if (labyrinth[row][col] == 1) {
+                // Calculate relative position to player
+                val relativeX = col - playerPosition.x
+                val relativeY = row - playerPosition.y
+                val distance = sqrt(relativeX * relativeX + relativeY * relativeY.toFloat())
+
+                // Calculate wall positions in perspective
+                val perspectiveScale = 1f - (distance / viewDistance).coerceIn(0f, 1f)
+                val wallHeight = (floorEndY - horizonY) * perspectiveScale * 0.5f
+                val wallWidth = wallSegmentWidth * perspectiveScale
+
+                val wallX = centerX + (relativeX * wallSegmentWidth * perspectiveScale)
+                val wallY = horizonY + (relativeY * wallHeight)
+
+                // Draw wall
+                drawRect(
+                    color = Color.Black.copy(alpha = perspectiveScale),
+                    topLeft = Offset(wallX - wallWidth/2, wallY),
+                    size = androidx.compose.ui.geometry.Size(wallWidth, wallHeight)
+                )
+            }
+        }
+    }
+}
+
+private fun lerp(start: Float, end: Float, fraction: Float): Float {
+    return start + (end - start) * fraction
 }
