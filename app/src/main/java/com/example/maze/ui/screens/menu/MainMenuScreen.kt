@@ -17,7 +17,7 @@ fun MainMenuScreen(
     onNavigateToMultiplayer: () -> Unit,
     menuViewModel: MenuViewModel = viewModel(factory = MenuViewModelFactory(LocalContext.current))
 ) {
-    val isAvatarCreated = menuViewModel.isAvatarCreated
+    val isAvatarCreated = true
 
     Column(
         modifier = Modifier

@@ -95,7 +95,7 @@ fun MazeApp() {
                         ?: return@composable
                     GameplayScreen(
                         labyrinthId = labyrinthId,
-                        onExit = {  // Changed from onGameComplete to onExit
+                        onExit = {
                             navController.navigate(Screen.Menu.route) {
                                 popUpTo(Screen.Menu.route) { inclusive = true }
                             }
