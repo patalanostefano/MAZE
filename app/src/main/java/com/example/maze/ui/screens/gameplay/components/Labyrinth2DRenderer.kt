@@ -21,6 +21,24 @@ fun Labyrinth2DRenderer(
     var visibleQuadrant by remember { mutableIntStateOf(0) }
     var croppedBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
+    // Add this effect to load the initial image
+    LaunchedEffect(fullImageUrl) {
+        val fullBitmap = ImageUtils.decodeBase64ToBitmap(fullImageUrl)
+        fullBitmap?.let {
+            val width = it.width
+            val height = it.height
+
+            // Show initial quadrant (top-left)
+            croppedBitmap = Bitmap.createBitmap(
+                fullBitmap,
+                0,
+                0,
+                width / 2,
+                height / 2
+            )
+        }
+    }
+
     // Calculate which quadrant the player is in and update the visible portion
     LaunchedEffect(playerPosition) {
         val fullBitmap = ImageUtils.decodeBase64ToBitmap(fullImageUrl)
@@ -28,7 +46,7 @@ fun Labyrinth2DRenderer(
             val width = it.width
             val height = it.height
 
-            // Determine quadrant (0: top-left, 1: top-right, 2: bottom-left, 3: bottom-right)
+            // Determine quadrant
             val quadrantX = if (playerPosition.x < width / 2) 0 else 1
             val quadrantY = if (playerPosition.y < height / 2) 0 else 1
             val newQuadrant = quadrantY * 2 + quadrantX
@@ -36,15 +54,18 @@ fun Labyrinth2DRenderer(
             if (newQuadrant != visibleQuadrant) {
                 visibleQuadrant = newQuadrant
 
-                // Crop the bitmap to show only the current quadrant
+                // Calculate the dimensions for the crop
                 val startX = (quadrantX * width / 2)
                 val startY = (quadrantY * height / 2)
+                val quadrantWidth = width / 2
+                val quadrantHeight = height / 2
+
                 croppedBitmap = Bitmap.createBitmap(
                     fullBitmap,
                     startX,
                     startY,
-                    width / 2,
-                    height / 2
+                    quadrantWidth,
+                    quadrantHeight
                 )
             }
         }
@@ -56,7 +77,7 @@ fun Labyrinth2DRenderer(
                 bitmap = bitmap.asImageBitmap(),
                 contentDescription = "Maze",
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Fit
+                contentScale = ContentScale.FillBounds  // Changed from Fit to FillBounds
             )
         }
     }
