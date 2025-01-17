@@ -34,6 +34,13 @@ class GameplayViewModel(
     private val _isHintVisible = MutableStateFlow(false)
     val isHintVisible: StateFlow<Boolean> = _isHintVisible.asStateFlow()
 
+
+    companion object {
+        private const val FRAME_TIME = 0.016f // Approximately 60 FPS
+        private const val MAX_VELOCITY = 5f // Maximum velocity limit
+        private const val ACCELERATION_SCALE = 0.3f // Scale factor for smoother control
+    }
+
     init {
         loadLabyrinth()
         setupSensorCollection()
@@ -64,40 +71,36 @@ class GameplayViewModel(
         val currentPosition = _playerPosition.value ?: return
         val velocity = _ballVelocity.value
 
-        // Scale factors for more natural movement
-        val accelerationScale = 0.3f
-        val maxVelocity = 5f
-
-        // Update velocity (reversed for intuitive control)
+        // Update velocity with limits
         val newVelocity = Velocity(
-            x = (velocity.x - accelerationX * accelerationScale * FRAME_TIME)
-                .coerceIn(-maxVelocity, maxVelocity),
-            y = (velocity.y + accelerationY * accelerationScale * FRAME_TIME)
-                .coerceIn(-maxVelocity, maxVelocity)
+            x = (velocity.x - accelerationX * ACCELERATION_SCALE * FRAME_TIME).coerceIn(-MAX_VELOCITY, MAX_VELOCITY),
+            y = (velocity.y + accelerationY * ACCELERATION_SCALE * FRAME_TIME).coerceIn(-MAX_VELOCITY, MAX_VELOCITY)
         )
 
-        // Calculate new position
+        // Update ball's position
         val newPosition = Position(
             x = currentPosition.x + (newVelocity.x * FRAME_TIME).toInt(),
             y = currentPosition.y + (newVelocity.y * FRAME_TIME).toInt()
         )
 
-        // Check collision and update position
+        // Boundary check
         if (_labyrinth.value?.isValidPosition(newPosition) == true) {
             _playerPosition.value = newPosition
             _ballVelocity.value = newVelocity
 
+            // Check if the player reached the end position
             if (_labyrinth.value?.isEndPosition(newPosition) == true) {
                 _gameState.value = GameState.Won
             }
         } else {
-            // Bounce effect
+            // Implement bouncing effect by reversing velocity
             _ballVelocity.value = Velocity(
                 x = if (newPosition.x != currentPosition.x) -velocity.x * 0.5f else velocity.x,
                 y = if (newPosition.y != currentPosition.y) -velocity.y * 0.5f else velocity.y
             )
         }
     }
+
 
 
 
@@ -116,9 +119,6 @@ class GameplayViewModel(
         sensorManager.unregisterListener(null as SensorEventListener?)
     }
 
-    companion object {
-        private const val FRAME_TIME = 0.016f // ~60 FPS
-    }
 }
 
 data class Velocity(val x: Float, val y: Float)
