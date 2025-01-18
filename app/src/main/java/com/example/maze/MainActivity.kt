@@ -30,8 +30,6 @@ import org.opencv.android.OpenCVLoader
 
 
 class MainActivity : ComponentActivity() {
-    private val authService: AuthService by lazy { AuthService() }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -53,7 +51,7 @@ class MainActivity : ComponentActivity() {
         UserContext.init(this)
 
         setContent {
-            MazeApp(authService)
+            MazeApp()
         }
     }
 
@@ -66,7 +64,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MazeApp(authService: AuthService) {
+fun MazeApp() {
     MAZETheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
