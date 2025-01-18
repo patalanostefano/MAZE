@@ -26,9 +26,15 @@ fun MainMenuScreen(
     onNavigateToPlay: () -> Unit,
     onNavigateToMultiplayer: () -> Unit,
     onLogout: () -> Unit,
-    menuViewModel: MenuViewModel = viewModel(factory = MenuViewModelFactory(LocalContext.current)) //Not necessary
+    menuViewModel: MenuViewModel = viewModel(factory = MenuViewModelFactory())
 ) {
     val isAvatarCreated = UserContext.avatar != null
+    val username by menuViewModel.username.collectAsState()
+    val avatarColor by menuViewModel.avatarColor.collectAsState()
+
+    LaunchedEffect(Unit) {
+        menuViewModel.refreshUserState() //Refresh state on screen load TODO: this doesn't work. Why??
+    }
 
     Scaffold(
         topBar = {
@@ -39,14 +45,12 @@ fun MainMenuScreen(
                         horizontalArrangement = Arrangement.Center,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = UserContext.username ?: "Guest")
+                        Text(text = username)
                         Box(
                             modifier = Modifier
                                 .size(24.dp)
                                 .background(
-                                    Color(
-                                        UserContext.avatar ?: Color.Transparent.hashCode()
-                                    )
+                                    Color(avatarColor)
                                 )
                                 .padding(start = 8.dp)
                         )
