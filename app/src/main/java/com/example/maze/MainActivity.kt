@@ -81,7 +81,11 @@ fun MazeApp(authService: AuthService) {
                             navController.navigate(Screen.LabyrinthSelector.route)
                         },
                         onNavigateToMultiplayer = {
-                            navController.navigate("${Screen.Multiplayer.route}/${"user1"}") //Gets username from saved state
+                            navController.navigate("${Screen.Multiplayer.route}/${UserContext.username}") //Gets username from local state
+                        },
+                        onLogout = {
+                            navController.navigate(Screen.Auth.route)
+                            UserContext.clearSession()
                         }
                     )
                 }

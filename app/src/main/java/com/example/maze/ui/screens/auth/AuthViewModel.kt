@@ -7,7 +7,6 @@ import com.example.maze.data.model.UserAlreadyExistsException
 import com.example.maze.data.model.UserContext
 import com.example.maze.data.model.UserNotFoundException
 import com.example.maze.data.network.AuthService
-import com.example.maze.navigation.Screen
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -19,10 +18,15 @@ class AuthViewModel(private val authService: AuthService) : ViewModel() {
     private val _errorState = MutableStateFlow<String?>(null) //To propagate errors to AuthPage
     val errorState: StateFlow<String?> get() = _errorState
 
-    fun login(username: String) {
+    fun login(username: String, rememberMe: Boolean) {
         viewModelScope.launch {
             try {
                 val user = authService.login(username)
+                if(rememberMe) {
+                    UserContext.savePersistent(user.username, user.avatarColor)
+                } else {
+                    UserContext.saveSession(user.username, user.avatarColor)
+                }
                 _loginSuccess.value = true
             } catch (e: UserNotFoundException) {
                 Log.e("MainActivity", e.message, e)

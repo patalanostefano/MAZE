@@ -2,10 +2,12 @@ package com.example.maze.ui.screens.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.SnackbarHostState
@@ -32,6 +34,7 @@ fun AuthPage(
     )
 ) {
     var username by remember { mutableStateOf("") }
+    var rememberMe by remember { mutableStateOf(false) }
     val loginSuccess by viewModel.loginSuccess.collectAsState()
     val errorState by viewModel.errorState.collectAsState()
 
@@ -68,7 +71,7 @@ fun AuthPage(
 
         //When name input is done, user logs in
         Button(
-            onClick = { viewModel.login(username) },
+            onClick = { viewModel.login(username, rememberMe) },
             modifier = Modifier
                 .padding(vertical = 8.dp)
                 .fillMaxWidth(0.7f)
@@ -87,7 +90,7 @@ fun AuthPage(
         ) {
             Text("Register")
         }
-        /*Row(
+        Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(vertical = 8.dp)
         ) {
@@ -95,13 +98,11 @@ fun AuthPage(
                 checked = rememberMe,
                 onCheckedChange = {
                     rememberMe = it
-                    setRememberMe(it)
-
                 }
             )
 
             Text("Remember me?")
-        }*/
+        }
     }
 }
 

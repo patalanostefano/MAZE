@@ -25,8 +25,14 @@ object UserContext {
         loadFromPreferences()
     }
 
-    // Save session state
+    // Save session state to only memory
     fun saveSession(username: String, avatar: Int) {
+        this.username = username
+        this.avatar = avatar
+    }
+
+    // Save session state to storage
+    fun savePersistent(username: String, avatar: Int) {
         this.username = username
         this.avatar = avatar
         this.isLoggedIn = true
@@ -35,6 +41,16 @@ object UserContext {
             putString(KEY_USERNAME, username)
             putInt(KEY_AVATAR, avatar)
             putBoolean(KEY_IS_LOGGED_IN, true)
+            apply()
+        }
+    }
+
+    // Update the avatar
+    fun updateAvatar(avatar: Int) {
+        this.avatar = avatar
+
+        sharedPreferences.edit().apply {
+            putInt(KEY_AVATAR, avatar)
             apply()
         }
     }

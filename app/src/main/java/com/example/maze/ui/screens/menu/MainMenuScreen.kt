@@ -24,9 +24,10 @@ fun MainMenuScreen(
     onNavigateToAvatar: () -> Unit,
     onNavigateToPlay: () -> Unit,
     onNavigateToMultiplayer: () -> Unit,
-    menuViewModel: MenuViewModel = viewModel(factory = MenuViewModelFactory(LocalContext.current))
+    onLogout: () -> Unit,
+    menuViewModel: MenuViewModel = viewModel(factory = MenuViewModelFactory(LocalContext.current)) //Not necessary
 ) {
-    val isAvatarCreated = true
+    val isAvatarCreated = UserContext.avatar != null
 
     Scaffold(
         topBar = {
@@ -88,6 +89,16 @@ fun MainMenuScreen(
                     .fillMaxWidth(0.7f)
             ) {
                 Text("Multiplayer")
+            }
+
+            Button(
+                onClick = onLogout,
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .fillMaxWidth(0.7f)
+
+            ) {
+                Text("Logout")
             }
         }
     }

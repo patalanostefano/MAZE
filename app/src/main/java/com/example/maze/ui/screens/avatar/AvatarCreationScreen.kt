@@ -42,6 +42,10 @@ fun AvatarCreationScreen(onAvatarCreated: () -> Unit) {
                 onClick = {
                     selectedColor = color
                     UserContext.avatar = color.hashCode()
+                    if (UserContext.isLoggedIn) {
+                        UserContext.updateAvatar(color.hashCode())
+                    }
+
                     onAvatarCreated()
                 }
             )
