@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.SnackbarHostState
@@ -37,6 +38,7 @@ fun AuthPage(
     var rememberMe by remember { mutableStateOf(false) }
     val loginSuccess by viewModel.loginSuccess.collectAsState()
     val errorState by viewModel.errorState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() } 
 
     LaunchedEffect(loginSuccess) {
         if (loginSuccess) {
@@ -46,7 +48,7 @@ fun AuthPage(
 
     LaunchedEffect(errorState) { //Show snackbar to show error
         errorState?.let { errorMessage ->
-            SnackbarHostState().showSnackbar(errorMessage)
+            snackbarHostState.showSnackbar(errorMessage)
             viewModel.clearError()
         }
     }
@@ -104,6 +106,7 @@ fun AuthPage(
             Text("Remember me?")
         }
     }
+    SnackbarHost(hostState = snackbarHostState)
 }
 
 @Preview(name = "User Login screen", showBackground = true, widthDp = 360, heightDp = 640)

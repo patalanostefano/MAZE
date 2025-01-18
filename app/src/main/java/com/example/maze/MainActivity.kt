@@ -6,12 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -23,17 +19,13 @@ import com.example.maze.ui.screens.multiplayer.MultiplayerScreen
 import com.example.maze.ui.theme.MAZETheme
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import com.example.maze.data.model.UserAlreadyExistsException
 import com.example.maze.data.model.UserContext
-import com.example.maze.data.model.UserNotFoundException
 import com.example.maze.data.network.AuthService
-import com.example.maze.data.repository.AuthRepository
 import com.example.maze.ui.screens.auth.AuthPage
 import com.example.maze.ui.screens.gameplay.GameplayScreen
 import com.example.maze.ui.screens.labyrinth.LabyrinthSelectorScreen
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
-import kotlinx.coroutines.launch
 import org.opencv.android.OpenCVLoader
 
 
