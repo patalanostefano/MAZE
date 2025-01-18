@@ -1,5 +1,6 @@
 package com.example.maze.ui.screens.menu
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*

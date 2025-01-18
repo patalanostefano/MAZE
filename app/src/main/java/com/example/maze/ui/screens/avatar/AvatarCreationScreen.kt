@@ -42,7 +42,7 @@ fun AvatarCreationScreen(onAvatarCreated: () -> Unit) {
                 onClick = {
                     selectedColor = color
                     UserContext.avatar = color.hashCode()
-                    if (UserContext.isLoggedIn) {
+                    if (UserContext.isLoggedIn) { //Could be delegated to ViewModel but there's way too little logic
                         UserContext.updateAvatar(color.hashCode())
                     }
 
