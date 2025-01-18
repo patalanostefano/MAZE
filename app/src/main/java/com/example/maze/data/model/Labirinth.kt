@@ -1,6 +1,5 @@
 package com.example.maze.data.model
 
-
 data class Labyrinth(
     val id: String = "",
     val name: String = "",
@@ -8,7 +7,8 @@ data class Labyrinth(
     val endPosition: Position = Position(),
     val fullImageUrl: String = "",  // Base64 encoded image
     val width: Int = 0,  // Image width
-    val height: Int = 0  // Image height
+    val height: Int = 0,  // Image height
+    val mazeGrid: List<List<Int>> = emptyList() // 2D grid for walls and paths
 ) {
     // Check if position is the end position
     fun isEndPosition(position: Position): Boolean {

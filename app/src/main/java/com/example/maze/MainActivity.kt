@@ -39,6 +39,7 @@ import com.example.maze.ui.screens.labyrinth.LabyrinthSelectorScreen
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import kotlinx.coroutines.launch
+import org.opencv.android.OpenCVLoader
 
 val Context.dataStore by preferencesDataStore(name = "user_prefs")
 
@@ -50,6 +51,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Initialize OpenCV
+        if (!OpenCVLoader.initDebug()) {
+            Log.e("MainActivity", "Failed to load OpenCV")
+        } else {
+            Log.d("MainActivity", "OpenCV loaded successfully: ${OpenCVLoader.OPENCV_VERSION}")
+        }
+
         // Initialize Firebase
         try {
             Firebase.initialize(this)
@@ -57,7 +65,7 @@ class MainActivity : ComponentActivity() {
             Log.e("MainActivity", "Error initializing Firebase: ${e.message}", e)
         }
 
-        //Initialize Firestore
+        // Initialize Firestore
         try {
             authRepository = AuthRepository()
             authService = AuthService(authRepository)
@@ -67,6 +75,13 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MazeApp(authService)
+        }
+    }
+
+    companion object {
+        // Load OpenCV native library
+        init {
+            System.loadLibrary("opencv_java4")
         }
     }
 }
