@@ -20,6 +20,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        ndk {
+            abiFilters += setOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+        }
     }
 
     buildTypes {
@@ -61,6 +64,8 @@ android {
 }
 
 dependencies {
+    // OpenCV dependency
+    implementation ("com.quickbirdstudios:opencv:4.5.3.0")
     // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:32.7.0")) //33.7.0 sugg by firestore
     // sugg by firestore implementation("com.google.firebase:firebase-analytics")
