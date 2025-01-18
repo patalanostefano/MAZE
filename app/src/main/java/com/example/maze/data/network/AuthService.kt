@@ -2,6 +2,7 @@
 package com.example.maze.data.network
 
 import com.example.maze.data.model.User
+import com.example.maze.data.model.UserNotFoundException
 import com.example.maze.data.repository.AuthRepository
 
 class AuthService(
@@ -28,7 +29,7 @@ class AuthService(
         val user = getUserByName(username)
 
         if(user == null) {
-            throw NoSuchElementException("User not found")
+            throw UserNotFoundException("User not found")
         }
 
         return user

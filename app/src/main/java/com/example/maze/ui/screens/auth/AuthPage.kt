@@ -26,13 +26,8 @@ import androidx.compose.ui.unit.dp
 fun AuthPage(
     onLogin: (String) -> Unit,
     onRegister: (String) -> Unit,
-    setRememberMe: (Boolean) -> Unit,
-    saveSession: suspend (Boolean, String) -> Unit
 ) {
     var userName by remember { mutableStateOf("") }
-    var registrationStatus by remember { mutableStateOf(false) }
-    var loginStatus by remember { mutableStateOf(false) }
-    var rememberMe by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -62,14 +57,14 @@ fun AuthPage(
         }
 
         Button(
-            onClick = { onRegister(userName); onLogin(userName) }, //Register and login
+            onClick = { onRegister(userName)}, //Register and login
             modifier = Modifier
                 .padding(vertical = 8.dp)
                 .fillMaxWidth(0.7f)
         ) {
-            Text("Register & Log in")
+            Text("Register")
         }
-        Row(
+        /*Row( TBD
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(vertical = 8.dp)
         ) {
@@ -83,7 +78,7 @@ fun AuthPage(
             )
 
             Text("Remember me?")
-        }
+        }*/
     }
 }
 
@@ -93,7 +88,5 @@ fun AuthScreenPreview() {
     AuthPage(
         onLogin = { /* No-op */ },
         onRegister = { /* No-op */ },
-        setRememberMe = { /* No-op */ },
-        saveSession = { _, _ -> /* No-op */ }
     )
 }

@@ -7,6 +7,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,6 +32,8 @@ import com.example.maze.ui.screens.multiplayer.MultiplayerScreen
 import com.example.maze.ui.theme.MAZETheme
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.example.maze.data.model.UserAlreadyExistsException
+import com.example.maze.data.model.UserNotFoundException
 import com.example.maze.data.network.AuthService
 import com.example.maze.data.repository.AuthRepository
 import com.example.maze.ui.screens.auth.AuthPage
@@ -39,8 +43,6 @@ import com.example.maze.ui.screens.labyrinth.LabyrinthSelectorScreen
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import kotlinx.coroutines.launch
-
-val Context.dataStore by preferencesDataStore(name = "user_prefs")
 
 
 class MainActivity : ComponentActivity() {
@@ -73,17 +75,14 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MazeApp(authService: AuthService) {
-    val context = LocalContext.current
-    val userSessionFlow = remember { PreferencesManager(context).getUserSession() }
-    val userSession by userSessionFlow.collectAsState(initial = false to null) //Stores local user session
-
+    val snackbar = remember { SnackbarHostState() }
     MAZETheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
             val navController = rememberNavController()
-            val loggedIn = userSession.first && userSession.second != null
+            val loggedIn = false
 
             NavHost(
                 navController = navController,
@@ -91,9 +90,6 @@ fun MazeApp(authService: AuthService) {
             ) {
                 composable(Screen.Menu.route) {
                     MainMenuScreen(
-                        onNavigateToAuth = {
-                            navController.navigate(Screen.Auth.route)
-                        },
                         onNavigateToAvatar = {
                             navController.navigate(Screen.Avatar.route)
                         },
@@ -101,7 +97,7 @@ fun MazeApp(authService: AuthService) {
                             navController.navigate(Screen.LabyrinthSelector.route)
                         },
                         onNavigateToMultiplayer = {
-                            navController.navigate("${Screen.Multiplayer.route}/${userSession.second}") //Gets username from saved state
+                            navController.navigate("${Screen.Multiplayer.route}/${"user1"}") //Gets username from saved state
                         }
                     )
                 }
@@ -115,28 +111,26 @@ fun MazeApp(authService: AuthService) {
                                 try {
                                     authService.login(userName)
                                     navController.navigate(Screen.Menu.route)
-                                } catch(e: Exception) {
-                                    Log.e("MainActivity","Failed to login: ${e.message}", e)
+                                } catch (e: UserNotFoundException) {
+                                    Log.e("MainActivity",e.message,e)
+                                    snackbar.showSnackbar("User not found")
+                                } catch (e: Exception) {
+                                    Log.e("MainActivity", "Failed to login: ${e.message}", e)
+                                    snackbar.showSnackbar("Failed to login")
                                 }
                             }
                         },
                         onRegister = { userName ->
                             coroutineScope.launch {
-                                authService.createUser(userName, 1)
-                            }
-                        },
-                        setRememberMe = { rememberMe ->
-                            coroutineScope.launch {
-                                context.dataStore.edit { preferences ->
-                                    preferences[booleanPreferencesKey("remember_me")] = rememberMe
-                                }
-                            }
-                        },
-                        saveSession = { rememberMe, session ->
-                            coroutineScope.launch {
-                                context.dataStore.edit { preferences ->
-                                    preferences[booleanPreferencesKey("remember_me")] = rememberMe
-                                    preferences[stringPreferencesKey("session")] = session
+                                try {
+                                    authService.createUser(userName, 1)
+                                    snackbar.showSnackbar("User registered")
+                                } catch (e : UserAlreadyExistsException) {
+                                    Log.e("MainActivity", e.message,e)
+                                    snackbar.showSnackbar("User already exists")
+                                } catch (e: Exception) {
+                                    Log.e("MainActivity", "Failed to register: ${e.message}",e)
+                                    snackbar.showSnackbar("Failed to register")
                                 }
                             }
                         }
@@ -213,12 +207,6 @@ fun MazeApp(authService: AuthService) {
                 }
             }
         }
-    }
-
-    @Composable
-    fun AuthPageContent(authService: AuthService, userName: String) {
-        LaunchedEffect(userName) {
-            authService.createUser(userName, 1)
-        }
+        SnackbarHost(hostState = snackbar)
     }
 }

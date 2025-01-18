@@ -2,6 +2,7 @@ package com.example.maze.data.repository
 
 import android.util.Log
 import com.example.maze.data.model.User
+import com.example.maze.data.model.UserAlreadyExistsException
 import com.example.maze.data.network.UserActions
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -50,6 +51,10 @@ class AuthRepository : UserActions {
 
     override suspend fun createUser(username: String, avatarColor: Int): User {
         val newUser = User(id = null, username = username, avatarColor = avatarColor)
+        if (getUserByName(username) != null) {
+            throw UserAlreadyExistsException("User already exists")
+        }
+
         val documentRef = usersCollection.add(userToDocument(newUser)).await()
 
         Log.i("New user created in Firebase: $username",username)

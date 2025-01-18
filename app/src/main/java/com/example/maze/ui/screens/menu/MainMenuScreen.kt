@@ -14,7 +14,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun MainMenuScreen(
-    onNavigateToAuth: () -> Unit,
     onNavigateToAvatar: () -> Unit,
     onNavigateToPlay: () -> Unit,
     onNavigateToMultiplayer: () -> Unit,
@@ -29,15 +28,6 @@ fun MainMenuScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button( //Add ifnotlogged in func
-            onClick = onNavigateToAuth,
-            modifier = Modifier
-                .padding(vertical = 8.dp)
-                .fillMaxWidth(0.7f)
-        ) {
-            Text("Login")
-        }
-
         Button(
             onClick = onNavigateToAvatar,
             modifier = Modifier
