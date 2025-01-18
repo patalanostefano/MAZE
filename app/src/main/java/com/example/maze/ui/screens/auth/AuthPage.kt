@@ -2,32 +2,52 @@ package com.example.maze.ui.screens.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.maze.data.model.UserContext
 
 @Composable
 fun AuthPage(
-    onLogin: (String) -> Unit,
-    onRegister: (String) -> Unit,
+    onLogin: () -> Unit,
+    getAvatar: () -> Unit,
+    viewModel: AuthViewModel = viewModel(
+        factory = AuthViewModelFactory()
+    )
 ) {
-    var userName by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    val loginSuccess by viewModel.loginSuccess.collectAsState()
+    val errorState by viewModel.errorState.collectAsState()
+
+    LaunchedEffect(loginSuccess) {
+        if (loginSuccess) {
+            onLogin()
+        }
+    }
+
+    LaunchedEffect(errorState) { //Show snackbar to show error
+        errorState?.let { errorMessage ->
+            SnackbarHostState().showSnackbar(errorMessage)
+            viewModel.clearError()
+        }
+    }
+
 
     Column(
         modifier = Modifier
@@ -38,8 +58,8 @@ fun AuthPage(
     ) {
         //User inputs name here
         TextField(
-            value = userName,
-            onValueChange = { userName = it },
+            value = username,
+            onValueChange = { username = it },
             label = { Text("Enter username") },
             modifier = Modifier
                 .padding(vertical = 8.dp)
@@ -48,7 +68,7 @@ fun AuthPage(
 
         //When name input is done, user logs in
         Button(
-            onClick = { println(userName); onLogin(userName) },
+            onClick = { viewModel.login(username) },
             modifier = Modifier
                 .padding(vertical = 8.dp)
                 .fillMaxWidth(0.7f)
@@ -57,14 +77,17 @@ fun AuthPage(
         }
 
         Button(
-            onClick = { onRegister(userName)}, //Register and login
+            onClick = {
+                getAvatar()
+                UserContext.avatar?.let { viewModel.register(username, it) }
+            }, //Register and login
             modifier = Modifier
                 .padding(vertical = 8.dp)
                 .fillMaxWidth(0.7f)
         ) {
             Text("Register")
         }
-        /*Row( TBD
+        /*Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(vertical = 8.dp)
         ) {
@@ -86,7 +109,7 @@ fun AuthPage(
 @Composable
 fun AuthScreenPreview() {
     AuthPage(
-        onLogin = { /* No-op */ },
-        onRegister = { /* No-op */ },
+        onLogin = {},
+        getAvatar = {}
     )
 }

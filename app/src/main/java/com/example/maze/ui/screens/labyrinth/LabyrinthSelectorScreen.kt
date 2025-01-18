@@ -24,6 +24,7 @@ fun LabyrinthSelectorScreen(
         factory = LabyrinthSelectorViewModelFactory()
     ),
     onLabyrinthSelected: (String) -> Unit) {
+
     val labyrinths by viewModel.labyrinths.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 

@@ -1,6 +1,5 @@
 package com.example.maze
 
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -11,17 +10,9 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -33,11 +24,11 @@ import com.example.maze.ui.theme.MAZETheme
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.maze.data.model.UserAlreadyExistsException
+import com.example.maze.data.model.UserContext
 import com.example.maze.data.model.UserNotFoundException
 import com.example.maze.data.network.AuthService
 import com.example.maze.data.repository.AuthRepository
 import com.example.maze.ui.screens.auth.AuthPage
-import com.example.maze.ui.screens.auth.PreferencesManager
 import com.example.maze.ui.screens.gameplay.GameplayScreen
 import com.example.maze.ui.screens.labyrinth.LabyrinthSelectorScreen
 import com.google.firebase.ktx.Firebase
@@ -46,8 +37,7 @@ import kotlinx.coroutines.launch
 
 
 class MainActivity : ComponentActivity() {
-    private lateinit var authService: AuthService
-    private lateinit var authRepository: AuthRepository
+    private val authService: AuthService by lazy { AuthService() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,13 +49,8 @@ class MainActivity : ComponentActivity() {
             Log.e("MainActivity", "Error initializing Firebase: ${e.message}", e)
         }
 
-        //Initialize Firestore
-        try {
-            authRepository = AuthRepository()
-            authService = AuthService(authRepository)
-        } catch (e: Exception) {
-            Log.e("MainActivity", "Error initializing Auth: ${e.message}", e)
-        }
+        //Initialize user context
+        UserContext.init(this)
 
         setContent {
             MazeApp(authService)
@@ -75,14 +60,13 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MazeApp(authService: AuthService) {
-    val snackbar = remember { SnackbarHostState() }
     MAZETheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
             val navController = rememberNavController()
-            val loggedIn = false
+            val loggedIn = UserContext.isLoggedIn
 
             NavHost(
                 navController = navController,
@@ -103,36 +87,12 @@ fun MazeApp(authService: AuthService) {
                 }
 
                 composable(Screen.Auth.route) {
-                    val coroutineScope = rememberCoroutineScope()
-
                     AuthPage(
-                        onLogin = { userName ->
-                            coroutineScope.launch {
-                                try {
-                                    authService.login(userName)
-                                    navController.navigate(Screen.Menu.route)
-                                } catch (e: UserNotFoundException) {
-                                    Log.e("MainActivity",e.message,e)
-                                    snackbar.showSnackbar("User not found")
-                                } catch (e: Exception) {
-                                    Log.e("MainActivity", "Failed to login: ${e.message}", e)
-                                    snackbar.showSnackbar("Failed to login")
-                                }
-                            }
+                        onLogin = {
+                            navController.navigate(Screen.Menu.route)
                         },
-                        onRegister = { userName ->
-                            coroutineScope.launch {
-                                try {
-                                    authService.createUser(userName, 1)
-                                    snackbar.showSnackbar("User registered")
-                                } catch (e : UserAlreadyExistsException) {
-                                    Log.e("MainActivity", e.message,e)
-                                    snackbar.showSnackbar("User already exists")
-                                } catch (e: Exception) {
-                                    Log.e("MainActivity", "Failed to register: ${e.message}",e)
-                                    snackbar.showSnackbar("Failed to register")
-                                }
-                            }
+                        getAvatar = {
+                            navController.navigate(Screen.Avatar.route)
                         }
                     )
                 }
@@ -207,6 +167,5 @@ fun MazeApp(authService: AuthService) {
                 }
             }
         }
-        SnackbarHost(hostState = snackbar)
     }
 }

@@ -6,7 +6,7 @@ import com.example.maze.data.model.UserNotFoundException
 import com.example.maze.data.repository.AuthRepository
 
 class AuthService(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository = AuthRepository()
 ) : UserActions {
     override suspend fun getUserById(id: String): User? {
         return authRepository.getUserById(id)
