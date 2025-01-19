@@ -1,28 +1,85 @@
+// data/model/Labyrinth.kt
 package com.example.maze.data.model
 
 data class Labyrinth(
     val id: String = "",
     val name: String = "",
-    val startPosition: Position = Position(),
-    val endPosition: Position = Position(),
-    val fullImageUrl: String = "",  // Base64 encoded image
-    val width: Int = 0,  // Image width
-    val height: Int = 0,  // Image height
-    val mazeGrid: List<List<Int>> = emptyList() // 2D grid for walls and paths
+    val structure: List<List<Int>> = emptyList(),
+    val entrance: List<Int> = listOf(1, 1),
+    val exit: List<Int> = listOf(29, 29),
+    val fullImageUrl: String = ""
 ) {
-    // Check if position is the end position
-    fun isEndPosition(position: Position): Boolean {
-        val endZoneRadius = 30  // Adjust this value based on your needs
-        val dx = position.x - endPosition.x
-        val dy = position.y - endPosition.y
-        return (dx * dx + dy * dy) <= endZoneRadius * endZoneRadius
-    }
-}
+    companion object {
+        fun fromFirestore(data: Map<String, Any?>): Labyrinth {
+            return Labyrinth(
+                id = data["id"] as? String ?: "",
+                name = data["name"] as? String ?: "",
+                structure = parseStructure(data["structure"]),
+                entrance = parseCoordinates(data["entrance"]),
+                exit = parseCoordinates(data["exit"]),
+                fullImageUrl = data["fullImageUrl"] as? String ?: ""
+            )
+        }
 
-data class Position(
-    val x: Int = 0,
-    val y: Int = 0
-) {
-    operator fun plus(other: Position) = Position(x + other.x, y + other.y)
-    operator fun minus(other: Position) = Position(x - other.x, y - other.y)
+        private fun parseStructure(structureData: Any?): List<List<Int>> {
+            return when (structureData) {
+                is Map<*, *> -> {
+                    // Sort by key to maintain order
+                    val sortedRows = structureData.entries.sortedBy {
+                        (it.key as? String)?.toIntOrNull() ?: -1
+                    }
+
+                    sortedRows.map { (_, rowData) ->
+                        when (rowData) {
+                            is Map<*, *> -> {
+                                // Sort the inner map by key as well
+                                rowData.entries.sortedBy {
+                                    (it.key as? String)?.toIntOrNull() ?: -1
+                                }.map { (_, value) ->
+                                    when (value) {
+                                        is Long -> value.toInt()
+                                        is Int -> value
+                                        else -> 0 // Default to wall if invalid
+                                    }
+                                }
+                            }
+                            is List<*> -> rowData.map {
+                                when (it) {
+                                    is Long -> it.toInt()
+                                    is Int -> it
+                                    else -> 0
+                                }
+                            }
+                            else -> emptyList()
+                        }
+                    }
+                }
+                is List<*> -> structureData.map { row ->
+                    when (row) {
+                        is List<*> -> row.map {
+                            when (it) {
+                                is Long -> it.toInt()
+                                is Int -> it
+                                else -> 0
+                            }
+                        }
+                        else -> emptyList()
+                    }
+                }
+                else -> emptyList()
+            }
+        }
+
+
+        private fun parseCoordinates(data: Any?): List<Int> {
+            return when (data) {
+                is List<*> -> data.mapNotNull { (it as? Long)?.toInt() }
+                is Map<*, *> -> listOf(
+                    ((data["0"] ?: data[0]) as? Long)?.toInt() ?: 29,
+                    ((data["1"] ?: data[1]) as? Long)?.toInt() ?: 29
+                )
+                else -> listOf(29, 29)
+            }
+        }
+    }
 }

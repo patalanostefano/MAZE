@@ -1,84 +1,62 @@
-// ui/screens/gameplay/components/Labyrinth2DRenderer.kt
 package com.example.maze.ui.screens.gameplay.components
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
-import android.graphics.Bitmap
-import com.example.maze.data.model.Position
-import com.example.maze.utils.ImageUtils
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import com.example.maze.data.model.GameState
+import com.example.maze.data.model.Labyrinth
+import com.example.maze.ui.screens.gameplay.GameplayViewModel
+
+// ui/screens/gameplay/components/LabyrinthRenderer.kt
+
 
 @Composable
-fun Labyrinth2DRenderer(
-    fullImageUrl: String,
-    playerPosition: Position,
+fun LabyrinthRenderer(
+    labyrinth: Labyrinth,
+    gameState: GameState.Playing,
     modifier: Modifier = Modifier
 ) {
-    var visibleQuadrant by remember { mutableIntStateOf(0) }
-    var croppedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    Canvas(modifier = modifier.fillMaxSize()) {
+        val cellSize = GameplayViewModel.CELL_SIZE
+        val structure = labyrinth.structure
 
-    // Add this effect to load the initial image
-    LaunchedEffect(fullImageUrl) {
-        val fullBitmap = ImageUtils.decodeBase64ToBitmap(fullImageUrl)
-        fullBitmap?.let {
-            val width = it.width
-            val height = it.height
+        // Calculate visible cells based on viewport offset
+        val startX = (gameState.viewportOffset.x / cellSize).toInt()
+        val startY = (gameState.viewportOffset.y / cellSize).toInt()
+        val visibleCells = GameplayViewModel.VISIBLE_CELLS
 
-            // Show initial quadrant (top-left)
-            croppedBitmap = Bitmap.createBitmap(
-                fullBitmap,
-                0,
-                0,
-                width / 2,
-                height / 2
-            )
-        }
-    }
-
-    // Calculate which quadrant the player is in and update the visible portion
-    LaunchedEffect(playerPosition) {
-        val fullBitmap = ImageUtils.decodeBase64ToBitmap(fullImageUrl)
-        fullBitmap?.let {
-            val width = it.width
-            val height = it.height
-
-            // Determine quadrant
-            val quadrantX = if (playerPosition.x < width / 2) 0 else 1
-            val quadrantY = if (playerPosition.y < height / 2) 0 else 1
-            val newQuadrant = quadrantY * 2 + quadrantX
-
-            if (newQuadrant != visibleQuadrant) {
-                visibleQuadrant = newQuadrant
-
-                // Calculate the dimensions for the crop
-                val startX = (quadrantX * width / 2)
-                val startY = (quadrantY * height / 2)
-                val quadrantWidth = width / 2
-                val quadrantHeight = height / 2
-
-                croppedBitmap = Bitmap.createBitmap(
-                    fullBitmap,
-                    startX,
-                    startY,
-                    quadrantWidth,
-                    quadrantHeight
-                )
+        // Draw visible portion of the maze
+        for (y in startY until (startY + visibleCells)) {
+            for (x in startX until (startX + visibleCells)) {
+                if (y in structure.indices && x in structure[0].indices && structure[y][x] == 1) {
+                    drawRect(
+                        color = Color.Black,
+                        topLeft = Offset(
+                            (x - startX) * cellSize,
+                            (y - startY) * cellSize
+                        ),
+                        size = Size(cellSize, cellSize)
+                    )
+                }
             }
         }
-    }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        croppedBitmap?.let { bitmap ->
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = "Maze",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.FillBounds  // Changed from Fit to FillBounds
+        // Draw ball
+        drawCircle(
+            color = Color.Blue,
+            radius = cellSize / 3,
+            center = Offset(
+                gameState.screenPosition.x,
+                gameState.screenPosition.y
             )
-        }
+        )
+
+        // Draw entrance and exit
+        val entranceColor = Color.Green
+        val exitColor = Color.Red
     }
 }
