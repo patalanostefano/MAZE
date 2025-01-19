@@ -31,7 +31,7 @@ fun LabyrinthRenderer(
         // Draw visible portion of the maze
         for (y in startY until (startY + visibleCells)) {
             for (x in startX until (startX + visibleCells)) {
-                if (y in structure.indices && x in structure[0].indices && structure[y][x] == 1) {
+                if (y in structure.indices && x in structure[0].indices && structure[y][x] == 0) {
                     drawRect(
                         color = Color.Black,
                         topLeft = Offset(

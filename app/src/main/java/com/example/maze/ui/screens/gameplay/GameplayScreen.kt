@@ -14,7 +14,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.maze.data.model.GameState
-import com.example.maze.data.model.UserContext
 import com.example.maze.ui.screens.gameplay.components.*
 import com.example.maze.utils.LockScreenOrientation
 
@@ -39,7 +38,7 @@ fun GameplayScreen(
 
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = Color.White // Enforce white background
+        color = Color.White // Enforce background
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             when (gameState) {

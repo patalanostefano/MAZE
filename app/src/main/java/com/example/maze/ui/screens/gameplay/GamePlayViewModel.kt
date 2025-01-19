@@ -131,7 +131,7 @@ class GameplayViewModel(
         // Ensure position is within bounds and not in a wall
         if (cellX in labyrinth.structure[0].indices &&
             cellY in labyrinth.structure.indices &&
-            labyrinth.structure[cellY][cellX] != 1) {
+            labyrinth.structure[cellY][cellX] != 0) {
 
             // Update viewport offset to keep ball centered
             val newViewportOffset = calculateViewportOffset(newAbsolutePosition)
