@@ -18,7 +18,8 @@ import com.example.maze.ui.screens.gameplay.GameplayViewModel
 fun LabyrinthRenderer(
     labyrinth: Labyrinth,
     gameState: GameState.Playing,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    color: Color
 ) {
     Canvas(modifier = modifier.fillMaxSize()) {
         val cellSize = GameplayViewModel.CELL_SIZE
@@ -47,7 +48,7 @@ fun LabyrinthRenderer(
 
         // Draw ball
         drawCircle(
-            color = Color.Blue,
+            color = color,
             radius = cellSize / 3,
             center = Offset(
                 gameState.screenPosition.x,

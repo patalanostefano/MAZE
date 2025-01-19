@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.maze.data.model.GameState
+import com.example.maze.data.model.UserContext
 import com.example.maze.ui.screens.gameplay.components.*
 import com.example.maze.utils.LockScreenOrientation
 
@@ -46,7 +47,8 @@ fun GameplayScreen(
                     LabyrinthRenderer(
                         labyrinth = currentLabyrinth,
                         gameState = playingState,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        color = UserContext.avatar?.let { Color(it) } ?: Color.Black
                     )
                 }
 
