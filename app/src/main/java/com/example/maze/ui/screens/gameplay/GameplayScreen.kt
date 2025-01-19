@@ -68,7 +68,7 @@ fun GameplayScreen(
                         )
                     }
 
-                    // Replace the single IconButton with a Row of buttons
+
                     Row(
                         modifier = Modifier
                             .align(Alignment.TopEnd)

@@ -25,7 +25,6 @@ fun SensorManager.combinedSensorFlow() = callbackFlow {
         override fun onSensorChanged(event: SensorEvent) {
             when (event.sensor.type) {
                 Sensor.TYPE_ACCELEROMETER -> {
-                    // For landscape mode, we swap X and Y and invert as needed
                     currentAccelX = event.values[1]
                     currentAccelY = event.values[0]
                 }
