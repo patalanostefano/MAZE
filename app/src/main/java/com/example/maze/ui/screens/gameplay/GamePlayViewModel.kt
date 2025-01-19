@@ -38,7 +38,7 @@ class GameplayViewModel(
 
     companion object {
         const val CELL_SIZE = 40f
-        const val VISIBLE_CELLS = 10
+        const val VISIBLE_CELLS = 30
     }
 
     init {

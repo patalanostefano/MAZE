@@ -37,61 +37,69 @@ fun GameplayScreen(
 
     var showExitDialog by remember { mutableStateOf(false) }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        when (gameState) {
-            is GameState.Loading -> {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
-            is GameState.Playing -> {
-                val playingState = gameState as GameState.Playing
-                labyrinth?.let { currentLabyrinth ->
-                    LabyrinthRenderer(
-                        labyrinth = currentLabyrinth,
-                        gameState = playingState,
-                        modifier = Modifier.fillMaxSize(),
-                        color = Color(avatarColor)
-                    )
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = Color.White // Enforce white background
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            when (gameState) {
+                is GameState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
 
-                // Exit button
-                IconButton(
-                    onClick = { showExitDialog = true },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Exit"
+                is GameState.Playing -> {
+                    val playingState = gameState as GameState.Playing
+                    labyrinth?.let { currentLabyrinth ->
+                        LabyrinthRenderer(
+                            labyrinth = currentLabyrinth,
+                            gameState = playingState,
+                            modifier = Modifier.fillMaxSize(),
+                            color = Color(avatarColor)
+                        )
+                    }
+
+                    // Exit button
+                    IconButton(
+                        onClick = { showExitDialog = true },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Exit"
+                        )
+                    }
+                }
+
+                is GameState.Won -> {
+                    LaunchedEffect(Unit) {
+                        onExit()
+                    }
+                }
+
+                is GameState.Error -> {
+                    Text(
+                        text = (gameState as GameState.Error).message,
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color.Red
                     )
                 }
             }
-            is GameState.Won -> {
-                LaunchedEffect(Unit) {
-                    onExit()
-                }
-            }
-            is GameState.Error -> {
-                Text(
-                    text = (gameState as GameState.Error).message,
-                    modifier = Modifier.align(Alignment.Center),
-                    color = Color.Red
+
+            if (showExitDialog) {
+                AlertDialog(
+                    onDismissRequest = { showExitDialog = false },
+                    title = { Text("Exit Game") },
+                    text = { Text("Are you sure you want to exit the game?") },
+                    confirmButton = {
+                        TextButton(onClick = onExit) { Text("Yes") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showExitDialog = false }) { Text("No") }
+                    }
                 )
             }
-        }
-
-        if (showExitDialog) {
-            AlertDialog(
-                onDismissRequest = { showExitDialog = false },
-                title = { Text("Exit Game") },
-                text = { Text("Are you sure you want to exit the game?") },
-                confirmButton = {
-                    TextButton(onClick = onExit) { Text("Yes") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showExitDialog = false }) { Text("No") }
-                }
-            )
         }
     }
 }

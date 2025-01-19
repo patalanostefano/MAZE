@@ -12,8 +12,6 @@ import com.example.maze.data.model.Labyrinth
 import com.example.maze.ui.screens.gameplay.GameplayViewModel
 
 // ui/screens/gameplay/components/LabyrinthRenderer.kt
-
-
 @Composable
 fun LabyrinthRenderer(
     labyrinth: Labyrinth,
