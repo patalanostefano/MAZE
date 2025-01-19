@@ -1,5 +1,6 @@
 package com.example.maze.ui.screens.gameplay.components
 
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -10,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import com.example.maze.data.model.GameState
 import com.example.maze.data.model.Labyrinth
 import com.example.maze.ui.screens.gameplay.GameplayViewModel
+import kotlin.math.floor
 
 // ui/screens/gameplay/components/LabyrinthRenderer.kt
 @Composable
@@ -74,13 +76,17 @@ fun LabyrinthRenderer(
             }
         }
 
+        //HIGHLY VOLATILE. 40 depends on cell size (?)
+        val xposit = floor(gameState.absolutePosition.x/40)
+        val yposit = floor(gameState.absolutePosition.y/40)
         // Draw ball
         drawCircle(
             color = color,
             radius = cellSize / 3,
             center = Offset(
-                gameState.screenPosition.x-20,
-                gameState.screenPosition.y-20
+                //AGAIN VOLATILE. 15 is half the size of currently used maze matrix
+                if(xposit < 15) gameState.screenPosition.x - 20 else gameState.screenPosition.x + 20,
+                if(yposit < 15) gameState.screenPosition.y - 20 else gameState.screenPosition.y + 20
             )
         )
     }
