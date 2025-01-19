@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 
 
 import com.example.maze.utils.combinedSensorFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class GameplayViewModel(
@@ -35,6 +36,32 @@ class GameplayViewModel(
 
     private val _avatarColor = MutableStateFlow(UserContext.avatar ?: Color.Black.hashCode())
     val avatarColor = _avatarColor.asStateFlow()
+
+    // Add these to GameplayViewModel
+    private val _showHint = MutableStateFlow(false)
+    val showHint = _showHint.asStateFlow()
+
+    private val _hintTimeRemaining = MutableStateFlow(10)
+    val hintTimeRemaining = _hintTimeRemaining.asStateFlow()
+
+    private val _hintUsed = MutableStateFlow(false)
+    val hintUsed = _hintUsed.asStateFlow()
+
+    // Add function to handle hint
+    fun showHint() {
+        if (!_hintUsed.value) {
+            _hintUsed.value = true
+            _showHint.value = true
+            viewModelScope.launch {
+                for (i in 10 downTo 0) {
+                    _hintTimeRemaining.value = i
+                    delay(1000)
+                }
+                _showHint.value = false
+            }
+        }
+    }
+
 
     companion object {
         const val CELL_SIZE = 40f
