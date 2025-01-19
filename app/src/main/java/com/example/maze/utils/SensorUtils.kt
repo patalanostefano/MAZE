@@ -26,11 +26,11 @@ fun SensorManager.combinedSensorFlow() = callbackFlow {
             when (event.sensor.type) {
                 Sensor.TYPE_ACCELEROMETER -> {
                     // For landscape mode, we swap X and Y and invert as needed
-                    currentAccelX = -event.values[1]
+                    currentAccelX = event.values[1]
                     currentAccelY = event.values[0]
                 }
                 Sensor.TYPE_GYROSCOPE -> {
-                    currentGyroX = event.values[1]
+                    currentGyroX = -event.values[1]
                     currentGyroY = -event.values[0]
                 }
             }
