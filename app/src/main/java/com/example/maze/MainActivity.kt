@@ -50,9 +50,26 @@ class MainActivity : ComponentActivity() {
         //Initialize user context
         UserContext.init(this)
 
+        //Load UserContext on configuration changes
+        savedInstanceState?.let {
+            UserContext.username = it.getString("username")
+            UserContext.avatar = it.getInt("avatar")
+            UserContext.isLoggedIn = it.getBoolean("isLoggedIn")
+        }
+
         setContent {
             MazeApp()
         }
+    }
+
+    //Save UserContext on configuration changes
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        // Save UserContext state
+        outState.putString("username", UserContext.username)
+        outState.putInt("avatar", UserContext.avatar ?: -1)
+        outState.putBoolean("isLoggedIn", UserContext.isLoggedIn)
     }
 
     companion object {
@@ -136,7 +153,7 @@ fun MazeApp() {
                         labyrinthId = labyrinthId,
                         onExit = {
                             navController.navigate(Screen.Menu.route) {
-                                popUpTo(Screen.Menu.route) { inclusive = true }
+                                popUpTo(Screen.Menu.route)
                             }
                         },
                         modifier = Modifier.fillMaxSize()

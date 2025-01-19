@@ -17,7 +17,6 @@ object UserContext {
     var username: String? = null
     var avatar: Int? = null
     var isLoggedIn: Boolean = false
-        private set
 
     // Initialize SharedPreferences
     fun init(context: Context) {
