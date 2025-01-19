@@ -2,11 +2,13 @@ package com.example.maze.ui.screens.gameplay
 
 
 import android.hardware.SensorManager
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.maze.data.model.GameState
 import com.example.maze.data.model.Labyrinth
 import com.example.maze.data.model.Position
+import com.example.maze.data.model.UserContext
 import com.example.maze.data.repository.LabyrinthRepository
 import com.example.maze.utils.getWeightedMovement
 
@@ -30,6 +32,9 @@ class GameplayViewModel(
 
     private val _labyrinth = MutableStateFlow<Labyrinth?>(null)
     val labyrinth = _labyrinth.asStateFlow()
+
+    private val _avatarColor = MutableStateFlow(UserContext.avatar ?: Color.Black.hashCode())
+    val avatarColor = _avatarColor.asStateFlow()
 
     companion object {
         const val CELL_SIZE = 40f

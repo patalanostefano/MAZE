@@ -33,6 +33,7 @@ fun GameplayScreen(
 
     val gameState by viewModel.gameState.collectAsState()
     val labyrinth by viewModel.labyrinth.collectAsState()
+    val avatarColor by viewModel.avatarColor.collectAsState()
 
     var showExitDialog by remember { mutableStateOf(false) }
 
@@ -48,7 +49,7 @@ fun GameplayScreen(
                         labyrinth = currentLabyrinth,
                         gameState = playingState,
                         modifier = Modifier.fillMaxSize(),
-                        color = UserContext.avatar?.let { Color(it) } ?: Color.Black
+                        color = Color(avatarColor)
                     )
                 }
 
