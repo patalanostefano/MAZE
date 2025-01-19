@@ -49,8 +49,8 @@ fun LabyrinthRenderer(
             color = color,
             radius = cellSize / 3,
             center = Offset(
-                gameState.screenPosition.x,
-                gameState.screenPosition.y
+                gameState.screenPosition.x-20,
+                gameState.screenPosition.y-20
             )
         )
 
