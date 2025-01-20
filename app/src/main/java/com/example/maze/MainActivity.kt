@@ -20,7 +20,6 @@ import com.example.maze.ui.theme.MAZETheme
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.maze.data.model.UserContext
-import com.example.maze.data.network.AuthService
 import com.example.maze.ui.screens.auth.AuthPage
 import com.example.maze.ui.screens.gameplay.GameplayScreen
 import com.example.maze.ui.screens.labyrinth.LabyrinthSelectorScreen
@@ -33,7 +32,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize OpenCV
+        // Initialize OpenCV TODO clean this up
         if (!OpenCVLoader.initDebug()) {
             Log.e("MainActivity", "Failed to load OpenCV")
         } else {

@@ -8,7 +8,6 @@ import com.example.maze.data.model.PositionUpdate
 import com.example.maze.data.network.SocketHelper
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
 
 class GameServer {
     companion object {

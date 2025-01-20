@@ -43,12 +43,28 @@ class AuthRepository : UserActions {
     override suspend fun getUserById(id: String): User? {
         val documentSnapshot = usersCollection.document(id).get().await()
         return if (documentSnapshot.exists()) {
+            val data = documentSnapshot.data ?: emptyMap()
+            User(
+                id = documentSnapshot.id,  // Use the document ID directly
+                username = data["username"] as String,
+                avatarColor = (data["avatarColor"] as? Long)?.toInt() ?: 0
+            )
+        } else {
+            null
+        }
+    }
+
+    /*
+    override suspend fun getUserById(id: String): User? {
+        val documentSnapshot = usersCollection.document(id).get().await()
+        return if (documentSnapshot.exists()) {
             documentToUser(documentSnapshot.data ?: emptyMap())
         } else {
             null
         }
     }
 
+     */
     override suspend fun createUser(username: String, avatarColor: Int): User {
         val newUser = User(id = null, username = username, avatarColor = avatarColor)
         if (getUserByName(username) != null) {

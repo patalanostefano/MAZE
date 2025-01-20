@@ -1,5 +1,6 @@
 package com.example.maze.ui.screens.multiplayer
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.maze.data.model.GameInvite
@@ -42,9 +43,20 @@ class MultiplayerViewModel(private val repository: MultiplayerRepository) : View
     fun initialize(userId: String) {
         viewModelScope.launch {
             try {
+                _connectionState.value = ConnectionState.Initializing
+                Log.d("MultiplayerViewModel", "Starting initialization for user: $userId")
                 repository.initializeUser(userId)
-                startScanning()
+                Log.d("MultiplayerViewModel", "User initialized, current user: ${repository.currentUser.value}")
+
+                if (repository.currentUser.value != null) {
+                    Log.d("MultiplayerViewModel", "Starting scanning after successful initialization")
+                    startScanning()
+                } else {
+                    Log.e("MultiplayerViewModel", "User initialization failed - user is null")
+                    _connectionState.value = ConnectionState.Error("Failed to initialize user")
+                }
             } catch (e: Exception) {
+                Log.e("MultiplayerViewModel", "Initialization error: ${e.message}")
                 _connectionState.value = ConnectionState.Error("Failed to initialize user")
             }
         }

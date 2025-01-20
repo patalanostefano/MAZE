@@ -76,7 +76,7 @@ fun LabyrinthRenderer(
             }
         }
 
-        //HIGHLY VOLATILE. 40 depends on cell size (?)
+        //HIGHLY VOLATILE. 40 depends on proportion between cell size and screen size
         val xposit = floor(gameState.absolutePosition.x/40)
         val yposit = floor(gameState.absolutePosition.y/40)
         // Draw ball
