@@ -11,15 +11,9 @@ import com.example.maze.data.model.Position
 import com.example.maze.data.model.UserContext
 import com.example.maze.data.repository.LabyrinthRepository
 import com.example.maze.utils.getWeightedMovement
-
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-
-// ui/screens/gameplay/GameplayViewModel.kt
-
-
 import com.example.maze.utils.combinedSensorFlow
-import com.google.type.DateTime
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 
