@@ -7,6 +7,7 @@ import com.example.maze.data.model.GameInvite
 import com.example.maze.data.model.GameState
 import com.example.maze.data.model.Position
 import com.example.maze.data.model.User
+import com.example.maze.data.model.UserContext
 import com.example.maze.data.network.UserActions
 import com.example.maze.data.network.NsdHelper
 import com.example.maze.data.network.ServerSocketHelper
@@ -52,7 +53,9 @@ class MultiplayerRepository(
 
     suspend fun initializeUser(userId: String) {
         try {
-            _currentUser.value = userActions.getUserById(userId)
+            val username = UserContext.username ?: throw IllegalStateException("Username is null")
+            val color = UserContext.avatar
+            _currentUser.value = color?.let { User(id = null, username = username,avatarColor = it) }
         } catch (e: Exception) {
             Log.e("MultiplayerRepository", "Failed to initialize user: ${e.message}")
             throw e
