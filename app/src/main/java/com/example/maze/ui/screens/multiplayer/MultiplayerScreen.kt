@@ -20,16 +20,37 @@ fun MultiplayerScreen(
     onNavigateToGame: (GameInvite) -> Unit,
     viewModel: MultiplayerViewModel = viewModel(factory = MultiplayerViewModelFactory(LocalContext.current))
 ) {
+    val gameInvites by viewModel.gameInvites.collectAsState()
     val availablePlayers by viewModel.availablePlayers.collectAsState()
     val connectionState by viewModel.connectionState.collectAsState()
     val currentUser by viewModel.currentUser.collectAsState()
 
+    // Handle cleanup when the composable is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.cleanup()
+        }
+    }
+
+    // Initialize user and start discovery when the screen loads
     LaunchedEffect(userId) {
         try {
             viewModel.initialize(userId)
         } catch (e: Exception) {
             Log.e("MultiplayerScreen", "Error initializing: ${e.message}", e)
         }
+    }
+
+    // Show game invites dialog if there are any pending invites
+    gameInvites.firstOrNull()?.let { invite ->
+        GameInviteDialog(
+            invite = invite,
+            onAccept = {
+                viewModel.acceptInvite(it)
+                onNavigateToGame(it)
+            },
+            onDecline = { viewModel.declineInvite(it) }
+        )
     }
 
     Box(
@@ -39,46 +60,99 @@ fun MultiplayerScreen(
     ) {
         when (connectionState) {
             is MultiplayerViewModel.ConnectionState.Initializing -> {
-                LoadingState(message = "Initializing...")
+                LoadingState(message = "Initializing multiplayer...")
             }
+
             is MultiplayerViewModel.ConnectionState.Scanning -> {
-                LoadingState(message = "Scanning for nearby players...")
+                Column {
+                    LoadingState(message = "Scanning for nearby players...")
+                    // Show any already discovered players while scanning continues
+                    if (availablePlayers.isNotEmpty()) {
+                        ConnectedState(
+                            currentUser = currentUser,
+                            availablePlayers = availablePlayers,
+                            onInvite = { player ->
+                                handleInvitePlayer(viewModel, player, currentUser, onNavigateToGame)
+                            }
+                        )
+                    }
+                }
             }
+
             is MultiplayerViewModel.ConnectionState.Connected -> {
                 ConnectedState(
                     currentUser = currentUser,
                     availablePlayers = availablePlayers,
                     onInvite = { player ->
-                        try {
-                            viewModel.sendInvite(player)
-                            // When invite is accepted, navigate to game
-                            currentUser?.let { current ->
-                                onNavigateToGame(GameInvite(
-                                    fromUser = current,
-                                    toUser = player
-                                ))
-                            }
-                        } catch (e: Exception) {
-                            Log.e("MultiplayerScreen", "Error sending invite: ${e.message}", e)
-                        }
+                        handleInvitePlayer(viewModel, player, currentUser, onNavigateToGame)
                     }
                 )
             }
+
             is MultiplayerViewModel.ConnectionState.Error -> {
                 ErrorState(
                     message = (connectionState as MultiplayerViewModel.ConnectionState.Error).message,
-                    onRetry = { viewModel.startScanning() }
+                    onRetry = {
+                        viewModel.cleanup() // Cleanup before retrying
+                        viewModel.startScanning()
+                    }
                 )
             }
+
             is MultiplayerViewModel.ConnectionState.PermissionRequired -> {
                 PermissionState(
-                    permissions = (connectionState as MultiplayerViewModel.ConnectionState.PermissionRequired).permissions
+                    permissions = (connectionState as MultiplayerViewModel.ConnectionState.PermissionRequired).permissions,
+                    onPermissionsGranted = {
+                        viewModel.startScanning()
+                    }
                 )
             }
         }
     }
 }
 
+private fun handleInvitePlayer(
+    viewModel: MultiplayerViewModel,
+    player: User,
+    currentUser: User?,
+    onNavigateToGame: (GameInvite) -> Unit
+) {
+    try {
+        viewModel.sendInvite(player)
+        currentUser?.let { current ->
+            val invite = GameInvite(
+                fromUser = current,
+                toUser = player
+            )
+            onNavigateToGame(invite)
+        }
+    } catch (e: Exception) {
+        Log.e("MultiplayerScreen", "Error sending invite: ${e.message}", e)
+    }
+}
+
+@Composable
+private fun GameInviteDialog(
+    invite: GameInvite,
+    onAccept: (GameInvite) -> Unit,
+    onDecline: (GameInvite) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { onDecline(invite) },
+        title = { Text("Game Invite") },
+        text = { Text("${invite.fromUser.username} has invited you to play!") },
+        confirmButton = {
+            Button(onClick = { onAccept(invite) }) {
+                Text("Accept")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { onDecline(invite) }) {
+                Text("Decline")
+            }
+        }
+    )
+}
 
 @Composable
 private fun LoadingState(message: String) {
@@ -179,7 +253,10 @@ private fun ErrorState(
 }
 
 @Composable
-private fun PermissionState(permissions: List<String>) {
+private fun PermissionState(
+    permissions: List<String>,
+    onPermissionsGranted: () -> Unit
+) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -188,6 +265,10 @@ private fun PermissionState(permissions: List<String>) {
         Text("Required Permissions:")
         permissions.forEach { permission ->
             Text("• $permission")
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = onPermissionsGranted) {
+            Text("Grant Permissions")
         }
     }
 }

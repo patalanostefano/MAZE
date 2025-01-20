@@ -2,27 +2,33 @@ package com.example.maze.ui.screens.multiplayer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.maze.data.model.GameInvite
 import com.example.maze.data.model.User
 import com.example.maze.data.repository.MultiplayerRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-sealed class ConnectionState {
-    object Scanning : ConnectionState()
-    object Connected : ConnectionState()
-    data class PermissionRequired(val permissions: List<String>) : ConnectionState()
-    data class Error(val message: String) : ConnectionState()
-}
+
 
 // ui/screens/multiplayer/MultiplayerViewModel.kt
-class MultiplayerViewModel(
-    private val repository: MultiplayerRepository
-) : ViewModel() {
+class MultiplayerViewModel(private val repository: MultiplayerRepository) : ViewModel() {
+    private val _initializationComplete = MutableStateFlow(false)
+    val initializationComplete: StateFlow<Boolean> = _initializationComplete
+
+    init {
+        viewModelScope.launch {
+            repository.currentUser.collect { user ->
+                _initializationComplete.value = user != null
+            }
+        }
+    }
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Initializing)
     val connectionState: StateFlow<ConnectionState> = _connectionState
     val availablePlayers = repository.availablePlayers
     val currentUser = repository.currentUser
+    val gameInvites = repository.gameInvites
+
 
     sealed class ConnectionState {
         object Initializing : ConnectionState()
@@ -31,6 +37,7 @@ class MultiplayerViewModel(
         data class PermissionRequired(val permissions: List<String>) : ConnectionState()
         data class Error(val message: String) : ConnectionState()
     }
+
 
     fun initialize(userId: String) {
         viewModelScope.launch {
@@ -65,6 +72,19 @@ class MultiplayerViewModel(
             repository.sendInvite(toUser)
         }
     }
+    fun acceptInvite(invite: GameInvite) {
+        repository.acceptInvite(invite)
+    }
+
+    fun declineInvite(invite: GameInvite) {
+        repository.declineInvite(invite)
+    }
+
+
+    fun cleanup() {
+        repository.cleanup()
+    }
+
 
     override fun onCleared() {
         super.onCleared()

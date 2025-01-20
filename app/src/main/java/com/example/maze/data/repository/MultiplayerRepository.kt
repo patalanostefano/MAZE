@@ -1,7 +1,11 @@
 package com.example.maze.data.repository
 
+import GameServer
 import android.content.Context
 import android.util.Log
+import com.example.maze.data.model.GameInvite
+import com.example.maze.data.model.GameState
+import com.example.maze.data.model.Position
 import com.example.maze.data.model.User
 import com.example.maze.data.network.UserActions
 import com.example.maze.data.network.NsdHelper
@@ -13,6 +17,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 
 class MultiplayerRepository(
     context: Context,
@@ -20,8 +26,17 @@ class MultiplayerRepository(
 ) {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private val serverSocketHelper = ServerSocketHelper()
+    private val socketHelper = SocketHelper { message ->
+        handleIncomingMessage(message)
+    }
     private val nsdHelper = NsdHelper(context, serverSocketHelper)
-    private var socketHelper: SocketHelper? = null
+    private val gameServer = GameServer()
+
+    private val _gameInvites = MutableStateFlow<List<GameInvite>>(emptyList())
+    val gameInvites: StateFlow<List<GameInvite>> = _gameInvites
+
+    private val _gameState = MutableStateFlow<GameState?>(null)
+    val gameState: StateFlow<GameState?> = _gameState
 
     private val _availablePlayers = MutableStateFlow<List<User>>(emptyList())
     val availablePlayers: StateFlow<List<User>> = _availablePlayers
@@ -33,12 +48,6 @@ class MultiplayerRepository(
         data object Success : DiscoveryResult()
         data class Error(val message: String) : DiscoveryResult()
         data class PermissionError(val permissions: List<String>) : DiscoveryResult()
-    }
-
-    init {
-        socketHelper = SocketHelper { message ->
-            handleIncomingMessage(message)
-        }
     }
 
     suspend fun initializeUser(userId: String) {
@@ -56,7 +65,7 @@ class MultiplayerRepository(
                 val currentUser = _currentUser.value ?: throw IllegalStateException("User not initialized")
 
                 try {
-                    // Initialize server socket first
+                    // Initialize server socket using the new ServerSocketHelper
                     val port = serverSocketHelper.initializeServer()
                     Log.d("MultiplayerRepository", "Server socket initialized on port: $port")
 
@@ -102,7 +111,11 @@ class MultiplayerRepository(
         withContext(Dispatchers.IO) {
             try {
                 val currentUser = _currentUser.value ?: throw IllegalStateException("Current user not initialized")
-                socketHelper?.sendMessage("INVITE:${currentUser.id}:${toUser.id}")
+                val gameInvite = GameInvite(
+                    fromUser = currentUser,
+                    toUser = toUser
+                )
+                socketHelper.sendMessage(Json.encodeToString(gameInvite))
                 Log.d("MultiplayerRepository", "Invite sent to: ${toUser.username}")
             } catch (e: Exception) {
                 Log.e("MultiplayerRepository", "Error sending invite: ${e.message}")
@@ -111,23 +124,47 @@ class MultiplayerRepository(
         }
     }
 
+    fun acceptInvite(invite: GameInvite) {
+        coroutineScope.launch {
+            try {
+                gameServer.connect(
+                    gameId = invite.gameId,
+                    userId = _currentUser.value?.id ?: throw IllegalStateException("User not initialized")
+                )
+
+                gameServer.setOnGameUpdateListener { update ->
+                    _gameState.value = update
+                }
+
+                _gameInvites.value = _gameInvites.value.filter { it.gameId != invite.gameId }
+            } catch (e: Exception) {
+                Log.e("MultiplayerRepository", "Error accepting invite: ${e.message}")
+            }
+        }
+    }
+
+    fun declineInvite(invite: GameInvite) {
+        _gameInvites.value = _gameInvites.value.filter { it.gameId != invite.gameId }
+    }
+
     private fun handleIncomingMessage(message: String) {
         try {
-            val parts = message.split(":")
-            if (parts[0] == "INVITE") {
-                val fromUserId = parts[1]
-                coroutineScope.launch {
-                    try {
-                        val fromUser = userActions.getUserById(fromUserId)
-                        Log.d("MultiplayerRepository", "Received invite from: ${fromUser?.username}")
-                        // Handle invite UI update
-                    } catch (e: Exception) {
-                        Log.e("MultiplayerRepository", "Error processing invite: ${e.message}")
-                    }
-                }
+            val invite = Json.decodeFromString<GameInvite>(message)
+            if (_currentUser.value?.id == invite.toUser.id) {
+                _gameInvites.value = _gameInvites.value + invite
             }
         } catch (e: Exception) {
             Log.e("MultiplayerRepository", "Error handling message: ${e.message}")
+        }
+    }
+
+    fun updatePosition(position: Position) {
+        coroutineScope.launch {
+            try {
+                gameServer.updatePosition(position)
+            } catch (e: Exception) {
+                Log.e("MultiplayerRepository", "Error updating position: ${e.message}")
+            }
         }
     }
 
@@ -135,7 +172,7 @@ class MultiplayerRepository(
         try {
             serverSocketHelper.close()
             nsdHelper.tearDown()
-            socketHelper?.close()
+            socketHelper.close()
             Log.d("MultiplayerRepository", "Cleanup completed successfully")
         } catch (e: Exception) {
             Log.e("MultiplayerRepository", "Error during cleanup: ${e.message}")

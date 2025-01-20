@@ -73,6 +73,9 @@ dependencies {
     implementation ("com.google.firebase:firebase-firestore")
     implementation ("com.google.firebase:firebase-firestore-ktx")
 
+    //json
+    implementation ("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+
     // Firebase SDK for Storage
     implementation ("com.google.android.gms:play-services-base:18.2.0")
     implementation ("com.google.firebase:firebase-storage-ktx")
