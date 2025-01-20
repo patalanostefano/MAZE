@@ -1,4 +1,3 @@
-// ui/screens/gameplay/GameplayScreen.kt
 package com.example.maze.ui.screens.gameplay
 
 import android.content.pm.ActivityInfo
@@ -144,9 +143,7 @@ fun GameplayScreen(
                 }
 
                 is GameState.Won -> {
-                    LaunchedEffect(Unit) {
-                        onExit()
-                    }
+                    VictoryScreen(onExit = onExit)
                 }
 
                 is GameState.Error -> {
@@ -171,6 +168,82 @@ fun GameplayScreen(
                     }
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun VictoryScreen(onExit: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.primary
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Congratulations!",
+                style = MaterialTheme.typography.displayLarge,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "You completed the labyrinth!",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Button(
+                onClick = onExit,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+            ) {
+                Text(
+                    text = "Exit",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSecondary
+                )
+            }
+        }
+    }
+}
+@Composable
+fun VictoryScreen(
+    elapsedTime: Long,
+    onExit: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "You Won!",
+            style = MaterialTheme.typography.headlineLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Time: ${elapsedTime}s",
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Button(onClick = onExit) {
+            Text("Exit")
         }
     }
 }

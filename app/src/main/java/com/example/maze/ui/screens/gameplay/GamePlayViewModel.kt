@@ -1,6 +1,5 @@
 package com.example.maze.ui.screens.gameplay
 
-
 import android.hardware.SensorManager
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
@@ -61,7 +60,6 @@ class GameplayViewModel(
             }
         }
     }
-
 
     companion object {
         const val CELL_SIZE = 40f
@@ -130,9 +128,6 @@ class GameplayViewModel(
         }
     }
 
-
-
-
     private fun updateBallPosition(dx: Float, dy: Float) {
         val currentState = _gameState.value as? GameState.Playing ?: return
         val labyrinth = _labyrinth.value ?: return
@@ -152,8 +147,6 @@ class GameplayViewModel(
         // Check collision with walls
         val cellX = (newAbsolutePosition.x / CELL_SIZE).toInt()
         val cellY = (newAbsolutePosition.y / CELL_SIZE).toInt()
-
-
 
         // Ensure position is within bounds and not in a wall
         if (cellX in labyrinth.structure[0].indices &&
