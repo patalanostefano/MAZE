@@ -36,7 +36,11 @@ class AuthRepository : UserActions {
             .await()
 
         return querySnapshot.documents.firstOrNull()?.let {
-            documentToUser(it.data ?: emptyMap())
+            User(
+                id = it.id,  // Extract the document ID
+                username = it["username"] as String,
+                avatarColor = (it["avatarColor"] as? Long)?.toInt() ?: 0
+            )
         }
     }
 
@@ -73,11 +77,11 @@ class AuthRepository : UserActions {
 
         val documentRef = usersCollection.add(userToDocument(newUser)).await()
 
-        Log.i("New user created in Firebase: $username",username)
+        Log.i("New user created in Firebase: $username", username)
         return newUser.copy(id = documentRef.id)
     }
 
-    override suspend fun updateUser(user: User): Boolean {
+    override suspend fun updateUser(user: User): Boolean { //By ID !!!
         if (user.id == null) return false
 
         usersCollection.document(user.id)
@@ -86,5 +90,18 @@ class AuthRepository : UserActions {
 
         // Firestore doesn't return modified count; assume success if no exception
         return true
+    }
+
+    suspend fun updateUserColorByName(username: String, color: Int) {
+        val user = getUserByName(username)
+        if (user != null) {
+            Log.i("HEre", "${user.username}, ${user.id}")
+        }
+        if (user?.id != null) {
+            val updatedUser = user.copy(avatarColor = color)
+            updateUser(updatedUser)
+        } else {
+            Log.e("AuthRepository", "User not found or user ID is null")
+        }
     }
 }

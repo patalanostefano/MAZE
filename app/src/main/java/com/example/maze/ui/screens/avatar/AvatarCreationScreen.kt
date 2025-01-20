@@ -15,10 +15,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.maze.data.model.UserContext
+import com.example.maze.ui.screens.auth.AuthViewModel
+import com.example.maze.ui.screens.auth.AuthViewModelFactory
 
 @Composable
-fun AvatarCreationScreen(onAvatarCreated: (Color) -> Unit) {
+fun AvatarCreationScreen(
+    onAvatarCreated: (Color) -> Unit,
+    viewModel: AuthViewModel = viewModel( //Breaks separation of concerns maybe?
+        factory = AuthViewModelFactory()
+    )
+) {
     var selectedColor by remember { mutableStateOf(Color.Transparent) }
     var hue by remember { mutableStateOf(0f) }
     var brightness by remember { mutableStateOf(0.5f) }
@@ -87,10 +95,7 @@ fun AvatarCreationScreen(onAvatarCreated: (Color) -> Unit) {
         // Confirmation button
         Button(
             onClick = {
-                UserContext.avatar = selectedColor.hashCode()
-                if (UserContext.isLoggedIn) {
-                    UserContext.updateAvatar(selectedColor.hashCode())
-                }
+                viewModel.updateAvatar(selectedColor)
                 onAvatarCreated(selectedColor)
             },
             modifier = Modifier.fillMaxWidth(0.5f)

@@ -1,6 +1,7 @@
 package com.example.maze.ui.screens.auth
 
 import android.util.Log
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.maze.data.model.UserAlreadyExistsException
@@ -55,5 +56,17 @@ class AuthViewModel(private val authService: AuthService) : ViewModel() {
 
     fun clearError() {
         _errorState.value = null
+    }
+
+    fun updateAvatar(color: Color) {
+        viewModelScope.launch {
+            UserContext.avatar = color.hashCode()
+            if (UserContext.isLoggedIn) {
+                UserContext.updateAvatar(color.hashCode())
+            }
+            Log.i("There","Updating")
+            UserContext.username?.let { authService.updateUserColorByName(it, color.hashCode()) }
+            Log.i("There","Updated")
+        }
     }
 }

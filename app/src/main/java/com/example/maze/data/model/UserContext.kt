@@ -14,6 +14,7 @@ object UserContext {
 
     private lateinit var sharedPreferences: SharedPreferences
 
+    //Should also store ID in the future
     var username: String? = null
     var avatar: Int? = null
     var isLoggedIn: Boolean = false

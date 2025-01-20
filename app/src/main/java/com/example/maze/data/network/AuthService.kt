@@ -1,6 +1,7 @@
 // data/network/MongoDbServiceImpl.kt
 package com.example.maze.data.network
 
+import android.util.Log
 import com.example.maze.data.model.User
 import com.example.maze.data.model.UserNotFoundException
 import com.example.maze.data.repository.AuthRepository
@@ -33,5 +34,10 @@ class AuthService(
         }
 
         return user
+    }
+
+    suspend fun updateUserColorByName(username: String, color: Int) {
+        Log.i("Here","Updating for $username")
+        return authRepository.updateUserColorByName(username, color)
     }
  }
