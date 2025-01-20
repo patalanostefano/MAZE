@@ -1,6 +1,7 @@
 package com.example.maze.ui.screens.gameplay
 
 import android.hardware.SensorManager
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,6 +19,7 @@ import kotlinx.coroutines.launch
 
 
 import com.example.maze.utils.combinedSensorFlow
+import com.google.type.DateTime
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -46,6 +48,11 @@ class GameplayViewModel(
     private val _hintUsed = MutableStateFlow(false)
     val hintUsed = _hintUsed.asStateFlow()
 
+    // Variabili per gestire il timer
+    private var startTime: Long = System.currentTimeMillis()
+    private val _elapsedTime = MutableStateFlow(0L) // Tempo trascorso in millisecondi
+    val elapsedTime = _elapsedTime.asStateFlow()
+
     // Add function to handle hint
     fun showHint() {
         if (!_hintUsed.value) {
@@ -65,7 +72,6 @@ class GameplayViewModel(
         const val CELL_SIZE = 40f
         const val VISIBLE_CELLS = 30
     }
-
     init {
         viewModelScope.launch {
             fetchLabyrinth(labyrinthId)
@@ -162,8 +168,10 @@ class GameplayViewModel(
                 viewportOffset = newViewportOffset
             )
 
-            // Check if reached exit
             if (cellX == labyrinth.exit[0] && cellY == labyrinth.exit[1]) {
+                val endTime = System.currentTimeMillis()
+                _elapsedTime.value = (endTime - startTime) / 1000 // Converti in secondi
+                Log.d("GameplayViewModel", "Game won! Elapsed time: ${_elapsedTime.value} seconds")
                 _gameState.value = GameState.Won
             }
         }

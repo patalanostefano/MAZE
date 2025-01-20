@@ -143,7 +143,7 @@ fun GameplayScreen(
                 }
 
                 is GameState.Won -> {
-                    VictoryScreen(onExit = onExit)
+                    VictoryScreen(elapsedTime = viewModel.elapsedTime.collectAsState().value, onExit = onExit)
                 }
 
                 is GameState.Error -> {
@@ -171,9 +171,11 @@ fun GameplayScreen(
         }
     }
 }
-
 @Composable
-fun VictoryScreen(onExit: () -> Unit) {
+fun VictoryScreen(
+    elapsedTime: Long,
+    onExit: () -> Unit
+) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.primary
@@ -194,8 +196,8 @@ fun VictoryScreen(onExit: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "You completed the labyrinth!",
-                style = MaterialTheme.typography.bodyLarge,
+                text = "You completed the labyrinth in ${elapsedTime}s!",
+                style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onPrimary
             )
 
@@ -214,36 +216,4 @@ fun VictoryScreen(onExit: () -> Unit) {
         }
     }
 }
-@Composable
-fun VictoryScreen(
-    elapsedTime: Long,
-    onExit: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "You Won!",
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.primary
-        )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Time: ${elapsedTime}s",
-            style = MaterialTheme.typography.bodyLarge
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Button(onClick = onExit) {
-            Text("Exit")
-        }
-    }
-}
